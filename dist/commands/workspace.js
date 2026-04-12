@@ -230,6 +230,10 @@ const program = new Command('workspace')
     printHeader('Import Current Directory');
     try {
         const workspace = await importCurrentDirectory();
+        if (!workspace) {
+            printWarning('Current directory is already a workspace');
+            return;
+        }
         printSuccess(`Workspace imported: ${chalk.yellow(workspace.name)}`);
         printInfo(`Path: ${chalk.gray(workspace.path)}`);
     }

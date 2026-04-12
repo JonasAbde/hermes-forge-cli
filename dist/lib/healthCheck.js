@@ -1,3 +1,9 @@
+function describeHealthError(error) {
+    if (error instanceof Error) {
+        return error.name === 'AbortError' ? 'timeout' : error.message;
+    }
+    return String(error);
+}
 /**
  * Lightweight HTTP reachability check. Uses GET (not HEAD): Forge API and many dev
  * servers do not treat HEAD /health the same as GET, which caused false negatives.
@@ -32,7 +38,7 @@ export async function checkHealth(url, timeoutMs = 2000) {
             url,
             status: 'error',
             responseTime,
-            message: error.name === 'AbortError' ? 'timeout' : error.message,
+            message: describeHealthError(error),
         };
     }
 }
@@ -100,7 +106,7 @@ export async function checkForgeApiHealth(baseUrl, timeoutMs = 4000) {
             status: 'error',
             responseTime,
             bodyOk: false,
-            message: error.name === 'AbortError' ? 'timeout' : error.message,
+            message: describeHealthError(error),
         };
     }
 }
@@ -161,7 +167,7 @@ export async function checkForgeApiReady(baseUrl, timeoutMs = 4000) {
             status: 'error',
             responseTime,
             bodyOk: false,
-            message: error.name === 'AbortError' ? 'timeout' : error.message,
+            message: describeHealthError(error),
         };
     }
 }

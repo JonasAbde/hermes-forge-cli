@@ -71,7 +71,8 @@ export class ConfigManager {
   }
 
   getPort(service: keyof CliConfig['ports']): number {
-    return this.config.get(`ports.${service}` as any);
+    const ports = this.config.get('ports');
+    return ports[service];
   }
 }
 

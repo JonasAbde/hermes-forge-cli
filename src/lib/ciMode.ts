@@ -3,6 +3,20 @@
 
 import chalk from 'chalk';
 
+type ForgeGlobal = typeof globalThis & {
+  __FORGE_CLI_START_TIME?: number;
+};
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error) return error.message;
+  return fallback;
+}
+
+function getErrorStack(error: unknown): string | undefined {
+  if (error instanceof Error) return error.stack;
+  return undefined;
+}
+
 // Exit codes based on sysexits.h + CLI-specific codes
 export const ExitCodes = {
   SUCCESS: 0,
@@ -72,7 +86,8 @@ export function createCiResponse<T>(
   data?: T,
   error?: { message: string; code: string; details?: unknown }
 ): CiResponse<T> {
-  const startTime = (global as any).__FORGE_CLI_START_TIME || Date.now();
+  const forgeGlobal = globalThis as ForgeGlobal;
+  const startTime = forgeGlobal.__FORGE_CLI_START_TIME || Date.now();
   const duration = Date.now() - startTime;
   
   return {
@@ -123,7 +138,8 @@ export async function runWithExitCode<T>(
   errorCode: number = ExitCodes.GENERAL_ERROR
 ): Promise<never> {
   const startTime = Date.now();
-  (global as any).__FORGE_CLI_START_TIME = startTime;
+  const forgeGlobal = globalThis as ForgeGlobal;
+  forgeGlobal.__FORGE_CLI_START_TIME = startTime;
   
   try {
     const result = await fn();
@@ -136,11 +152,11 @@ export async function runWithExitCode<T>(
         code: 'COMMAND_FAILED'
       });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     printAndExit(false, errorCode, undefined, {
-      message: error.message || 'Unexpected error',
+      message: getErrorMessage(error, 'Unexpected error'),
       code: 'UNEXPECTED_ERROR',
-      details: error.stack
+      details: getErrorStack(error)
     });
   }
 }

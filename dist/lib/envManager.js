@@ -2,6 +2,9 @@ import { readFile, access, readdir } from 'fs/promises';
 import { join } from 'path';
 import { config } from './configManager.js';
 const SECRET_PATTERNS = ['KEY', 'TOKEN', 'SECRET', 'PASSWORD', 'API_KEY', 'AUTH', 'PRIVATE'];
+function getErrnoCode(error) {
+    return error.code;
+}
 export function isSecretKey(key) {
     const upperKey = key.toUpperCase();
     return SECRET_PATTERNS.some(pattern => upperKey.includes(pattern));
@@ -62,7 +65,7 @@ export async function loadEnv(environment) {
         return parseEnvFile(content);
     }
     catch (error) {
-        if (error.code === 'ENOENT') {
+        if (getErrnoCode(error) === 'ENOENT') {
             throw new Error(`Environment file not found: .env.${environment}`);
         }
         throw error;

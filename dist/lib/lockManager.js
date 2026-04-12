@@ -3,6 +3,9 @@ import { join } from 'path';
 import { homedir } from 'os';
 const FORGE_DIR = join(homedir(), '.forge');
 const PIDS_DIR = join(FORGE_DIR, 'pids');
+function isErrnoException(error) {
+    return typeof error === 'object' && error !== null && 'code' in error;
+}
 async function ensurePidsDir() {
     try {
         await access(FORGE_DIR);
@@ -57,7 +60,7 @@ export async function releaseLock(service) {
         await unlink(getLockPath(service));
     }
     catch (error) {
-        if (error.code !== 'ENOENT') {
+        if (!isErrnoException(error) || error.code !== 'ENOENT') {
             throw error;
         }
         // Ignore if file doesn't exist
@@ -69,7 +72,7 @@ export async function getLock(service) {
         return JSON.parse(content);
     }
     catch (error) {
-        if (error.code === 'ENOENT') {
+        if (isErrnoException(error) && error.code === 'ENOENT') {
             return null;
         }
         throw error;

@@ -1,5 +1,13 @@
 import { execa } from 'execa';
 
+function getErrnoCode(error: unknown): string | undefined {
+  if (error && typeof error === 'object' && 'code' in error) {
+    const code = (error as { code?: unknown }).code;
+    return typeof code === 'string' ? code : undefined;
+  }
+  return undefined;
+}
+
 export async function isProcessRunning(pid: number): Promise<boolean> {
   try {
     process.kill(pid, 0);
@@ -56,8 +64,8 @@ export async function terminateProcess(pid: number, graceful = true): Promise<vo
   try {
     const signal = graceful ? 'SIGTERM' : 'SIGKILL';
     process.kill(pid, signal);
-  } catch (error: any) {
-    if (error.code === 'ESRCH') {
+  } catch (error: unknown) {
+    if (getErrnoCode(error) === 'ESRCH') {
       // Process doesn't exist, that's fine
       return;
     }

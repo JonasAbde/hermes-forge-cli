@@ -1,4 +1,11 @@
 import { execa } from 'execa';
+function getErrnoCode(error) {
+    if (error && typeof error === 'object' && 'code' in error) {
+        const code = error.code;
+        return typeof code === 'string' ? code : undefined;
+    }
+    return undefined;
+}
 export async function isProcessRunning(pid) {
     try {
         process.kill(pid, 0);
@@ -51,7 +58,7 @@ export async function terminateProcess(pid, graceful = true) {
         process.kill(pid, signal);
     }
     catch (error) {
-        if (error.code === 'ESRCH') {
+        if (getErrnoCode(error) === 'ESRCH') {
             // Process doesn't exist, that's fine
             return;
         }

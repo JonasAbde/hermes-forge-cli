@@ -64,7 +64,8 @@ export class ConfigManager {
         this.config.set(key, value);
     }
     getPort(service) {
-        return this.config.get(`ports.${service}`);
+        const ports = this.config.get('ports');
+        return ports[service];
     }
 }
 export const config = new ConfigManager();

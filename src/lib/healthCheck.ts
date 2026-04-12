@@ -5,6 +5,13 @@ export interface HealthResult {
   message?: string;
 }
 
+function describeHealthError(error: unknown): string {
+  if (error instanceof Error) {
+    return error.name === 'AbortError' ? 'timeout' : error.message;
+  }
+  return String(error);
+}
+
 /** Forge API GET /health JSON shape (see server/forge-api-core.mjs). */
 export interface ForgeApiHealthResult {
   url: string;
@@ -50,13 +57,13 @@ export async function checkHealth(url: string, timeoutMs = 2000): Promise<Health
       status: response.ok ? 'up' : 'down',
       responseTime,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     const responseTime = Date.now() - start;
     return {
       url,
       status: 'error',
       responseTime,
-      message: error.name === 'AbortError' ? 'timeout' : error.message,
+      message: describeHealthError(error),
     };
   }
 }
@@ -131,14 +138,14 @@ export async function checkForgeApiHealth(
         ? undefined
         : `status=${data.status}, forge_db=${data.forge_db}, catalog=${data.catalog}`,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     const responseTime = Date.now() - start;
     return {
       url: base.endsWith('/health') ? base : `${base}/health`,
       status: 'error',
       responseTime,
       bodyOk: false,
-      message: error.name === 'AbortError' ? 'timeout' : error.message,
+      message: describeHealthError(error),
     };
   }
 }
@@ -227,14 +234,14 @@ export async function checkForgeApiReady(
         ? undefined
         : `HTTP ${httpStatus}, ready=${data.ready}, checks=${JSON.stringify(data.checks)}`,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     const responseTime = Date.now() - start;
     return {
       url: base.endsWith('/ready') ? base : `${base}/ready`,
       status: 'error',
       responseTime,
       bodyOk: false,
-      message: error.name === 'AbortError' ? 'timeout' : error.message,
+      message: describeHealthError(error),
     };
   }
 }

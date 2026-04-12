@@ -1,5 +1,15 @@
 // CI Mode helpers for Forge CLI
 // Ensures consistent JSON output and exit codes for CI/CD pipelines
+function getErrorMessage(error, fallback) {
+    if (error instanceof Error)
+        return error.message;
+    return fallback;
+}
+function getErrorStack(error) {
+    if (error instanceof Error)
+        return error.stack;
+    return undefined;
+}
 // Exit codes based on sysexits.h + CLI-specific codes
 export const ExitCodes = {
     SUCCESS: 0,
@@ -37,7 +47,8 @@ export function ciOutput(data) {
 }
 // Create a standard CI response
 export function createCiResponse(success, exitCode, data, error) {
-    const startTime = global.__FORGE_CLI_START_TIME || Date.now();
+    const forgeGlobal = globalThis;
+    const startTime = forgeGlobal.__FORGE_CLI_START_TIME || Date.now();
     const duration = Date.now() - startTime;
     return {
         success,
@@ -76,7 +87,8 @@ export function printAndExit(success, exitCode, data, error) {
 // Wrapper for commands to ensure proper exit codes
 export async function runWithExitCode(fn, successCode = ExitCodes.SUCCESS, errorCode = ExitCodes.GENERAL_ERROR) {
     const startTime = Date.now();
-    global.__FORGE_CLI_START_TIME = startTime;
+    const forgeGlobal = globalThis;
+    forgeGlobal.__FORGE_CLI_START_TIME = startTime;
     try {
         const result = await fn();
         if (result.success) {
@@ -91,9 +103,9 @@ export async function runWithExitCode(fn, successCode = ExitCodes.SUCCESS, error
     }
     catch (error) {
         printAndExit(false, errorCode, undefined, {
-            message: error.message || 'Unexpected error',
+            message: getErrorMessage(error, 'Unexpected error'),
             code: 'UNEXPECTED_ERROR',
-            details: error.stack
+            details: getErrorStack(error)
         });
     }
 }

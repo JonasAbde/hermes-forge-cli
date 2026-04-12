@@ -23,5 +23,18 @@ export default tseslint.config(
       '@typescript-eslint/no-require-imports': 'error',
       '@typescript-eslint/no-unused-vars': 'off',
     },
+  },
+  {
+    files: [
+      'src/lib/configManager.ts',
+      'src/lib/envManager.ts',
+      'src/lib/processTracker.ts',
+      'src/lib/lockManager.ts',
+      'src/lib/healthCheck.ts',
+      'src/lib/ciMode.ts',
+    ],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error',
+    },
   }
 );

@@ -16,6 +16,10 @@ export interface EnvValidation {
 
 const SECRET_PATTERNS = ['KEY', 'TOKEN', 'SECRET', 'PASSWORD', 'API_KEY', 'AUTH', 'PRIVATE'];
 
+function getErrnoCode(error: unknown): string | undefined {
+  return (error as NodeJS.ErrnoException).code;
+}
+
 export function isSecretKey(key: string): boolean {
   const upperKey = key.toUpperCase();
   return SECRET_PATTERNS.some(pattern => upperKey.includes(pattern));
@@ -85,8 +89,8 @@ export async function loadEnv(environment: string): Promise<Record<string, strin
   try {
     const content = await readFile(path, 'utf8');
     return parseEnvFile(content);
-  } catch (error: any) {
-    if (error.code === 'ENOENT') {
+  } catch (error: unknown) {
+    if (getErrnoCode(error) === 'ENOENT') {
       throw new Error(`Environment file not found: .env.${environment}`);
     }
     throw error;

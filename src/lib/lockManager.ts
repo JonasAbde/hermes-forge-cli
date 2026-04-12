@@ -15,6 +15,10 @@ export interface LockInfo {
 const FORGE_DIR = join(homedir(), '.forge');
 const PIDS_DIR = join(FORGE_DIR, 'pids');
 
+function isErrnoException(error: unknown): error is NodeJS.ErrnoException {
+  return typeof error === 'object' && error !== null && 'code' in error;
+}
+
 async function ensurePidsDir(): Promise<void> {
   try {
     await access(FORGE_DIR);
@@ -78,8 +82,8 @@ export async function acquireLock(
 export async function releaseLock(service: string): Promise<void> {
   try {
     await unlink(getLockPath(service));
-  } catch (error: any) {
-    if (error.code !== 'ENOENT') {
+  } catch (error: unknown) {
+    if (!isErrnoException(error) || error.code !== 'ENOENT') {
       throw error;
     }
     // Ignore if file doesn't exist
@@ -90,8 +94,8 @@ export async function getLock(service: string): Promise<LockInfo | null> {
   try {
     const content = await readFile(getLockPath(service), 'utf8');
     return JSON.parse(content) as LockInfo;
-  } catch (error: any) {
-    if (error.code === 'ENOENT') {
+  } catch (error: unknown) {
+    if (isErrnoException(error) && error.code === 'ENOENT') {
       return null;
     }
     throw error;

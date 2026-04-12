@@ -254,8 +254,8 @@ const program = new Command('backup')
         printSuccess('Auto-backup disabled');
     }
     else {
-        printInfo('Current status: [not implemented]');
-        printInfo('Use --enable or --disable to change');
+        printInfo('Auto-backup is not currently configured.');
+        printInfo('Use --enable to enable scheduled backups or --disable to disable them.');
     }
 }));
 export default program;

@@ -191,12 +191,61 @@ const program = new Command('status')
     }
 
     if (options.watch) {
-      console.log('\nWatching... (Ctrl+C to stop)');
-      setInterval(() => {
+      console.log('\n' + chalk.gray('Watch mode — refreshing every 5 s. Ctrl+C to stop.'));
+
+      const refresh = async () => {
+        const freshLocks = await getAllLocks();
+        const freshHealth = await checkMultipleHealth(services.map(s => s.url));
+
+        const freshData = await Promise.all(services.map(async (service, i) => {
+          const lock = freshLocks.find(l => l.service === service.key);
+          const isValid = lock ? await isLockValid(service.key) : false;
+          const health = freshHealth[i];
+          let status: 'UP' | 'CRASHED' | 'DOWN';
+          if (!lock) {
+            status = 'DOWN';
+          } else if (!isValid) {
+            status = 'CRASHED';
+          } else {
+            status = health.status === 'up' ? 'UP' : 'CRASHED';
+          }
+          return { name: service.name, port: service.port, status, pid: lock?.pid, responseTime: health.responseTime };
+        }));
+
         console.clear();
-        // Would re-run status in real implementation
-        console.log('Watch mode active (simplified for MVP)');
-      }, 5000);
+        printHeader('Forge Status (watch)');
+        const { default: Table } = await import('cli-table3');
+        const tbl = new Table({
+          head: [chalk.bold('Service'), chalk.bold('Port'), chalk.bold('Status'), chalk.bold('Details')],
+          colWidths: [20, 8, 12, 30],
+          style: { head: ['cyan'] },
+        });
+        freshData.forEach(row => {
+          const col = row.status === 'UP' ? chalk.green : row.status === 'CRASHED' ? chalk.red : chalk.gray;
+          const details = row.pid
+            ? row.status === 'UP'
+              ? `pid ${row.pid}${row.responseTime ? ` · ${row.responseTime}ms` : ''}`
+              : `stale pid ${row.pid}`
+            : '';
+          tbl.push([row.name, row.port, col(row.status), details]);
+        });
+        console.log(tbl.toString());
+        console.log(chalk.gray(`Last updated: ${new Date().toLocaleTimeString()}`));
+      };
+
+      // Run immediately, then on interval
+      await refresh();
+      const timer = setInterval(() => { void refresh(); }, 5000);
+
+      // Clean up on exit
+      process.on('SIGINT', () => {
+        clearInterval(timer);
+        console.log('\n' + chalk.gray('Watch stopped.'));
+        process.exit(0);
+      });
+
+      // Keep alive
+      await new Promise(() => {/* intentional: stays alive until SIGINT */});
     }
   });
 

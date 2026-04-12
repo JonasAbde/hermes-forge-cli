@@ -1,19 +1,10 @@
-import { closeSync, existsSync, mkdirSync, openSync, watch } from 'fs';
 import { appendFile, mkdir, readFile, stat, unlink, rename, readdir } from 'fs/promises';
+import { watch } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import chalk from 'chalk';
 
 const LOG_DIR = join(homedir(), '.forge', 'logs');
-
-function hasErrnoCode(error: unknown, code: string): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    (error as { code?: unknown }).code === code
-  );
-}
 
 export interface LogEntry {
   timestamp: string;
@@ -120,8 +111,8 @@ export async function readLogs(service: string, lines: number): Promise<LogEntry
         };
       }
     });
-  } catch (error: unknown) {
-    if (hasErrnoCode(error, 'ENOENT')) {
+  } catch (error: any) {
+    if (error.code === 'ENOENT') {
       return [];
     }
     throw error;
@@ -131,27 +122,37 @@ export async function readLogs(service: string, lines: number): Promise<LogEntry
 export function tailLogs(service: string, callback: (entry: LogEntry) => void): () => void {
   const logPath = getLogFilePath(service);
 
-  // SECURITY: Watch only the service-scoped file under ~/.forge/logs.
-  // Ensure the watched path exists to avoid ENOENT crashes in follow mode.
-  mkdirSync(LOG_DIR, { recursive: true });
-  if (!existsSync(logPath)) {
-    const fd = openSync(logPath, 'a');
-    closeSync(fd);
-  }
+  // Track file size so we only read new content since the last read
+  let lastSize = 0;
+  stat(logPath).then(s => { lastSize = s.size; }).catch(() => { lastSize = 0; });
 
-  // Start watching
-  const watcher = watch(logPath, (eventType: string) => {
-    if (eventType === 'change') {
-      // Read last line
-      readLogs(service, 1).then(entries => {
-        if (entries.length > 0) {
-          callback(entries[0]);
+  const watcher = watch(logPath, (eventType) => {
+    if (eventType !== 'change') return;
+    stat(logPath)
+      .then(async (s) => {
+        if (s.size <= lastSize) return;
+        const content = await readFile(logPath, 'utf8');
+        const lines = content.trim().split('\n').filter(Boolean);
+        // Emit only lines that are new since the last read
+        const currentLineCount = lines.length;
+        const newLines = lines.slice(Math.max(0, currentLineCount - Math.ceil((s.size - lastSize) / 80)));
+        lastSize = s.size;
+        for (const line of newLines) {
+          try {
+            callback(JSON.parse(line) as LogEntry);
+          } catch {
+            callback({
+              timestamp: new Date().toISOString(),
+              service,
+              level: 'info',
+              message: line,
+            });
+          }
         }
-      });
-    }
+      })
+      .catch(() => {/* file disappeared during watch */});
   });
-  
-  // Return unsubscribe function
+
   return () => watcher.close();
 }
 
@@ -168,8 +169,8 @@ export async function clearLogs(service?: string): Promise<void> {
   if (service) {
     try {
       await unlink(getLogFilePath(service));
-    } catch (error: unknown) {
-      if (!hasErrnoCode(error, 'ENOENT')) {
+    } catch (error: any) {
+      if (error.code !== 'ENOENT') {
         throw error;
       }
     }

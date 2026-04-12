@@ -141,11 +141,12 @@ export function printProfileReport(report) {
     }
     console.log('');
 }
+// Middleware to profile commands
 export function withProfiling(fn) {
-    return async (...args) => {
-        const commandLike = args[0];
-        const command = commandLike?.name?.() || 'unknown';
-        const commandArgs = commandLike?.args || [];
+    return (async (...args) => {
+        const cmd = args[0];
+        const command = cmd?.name?.() ?? 'unknown';
+        const commandArgs = cmd?.args ?? [];
         profiler.start(command, commandArgs);
         try {
             profiler.stage('execute');
@@ -159,6 +160,6 @@ export function withProfiling(fn) {
                 printProfileReport(report);
             }
         }
-    };
+    });
 }
 //# sourceMappingURL=profiler.js.map

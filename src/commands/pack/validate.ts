@@ -1,15 +1,21 @@
 import { Command } from 'commander';
 import { z } from 'zod';
 import { readFileSync, existsSync } from 'fs';
-import { printHeader, printSuccess, printError, printWarning } from '../../lib/output.js';
+import { printHeader, printSuccess, printError, printWarning, printInfo } from '../../lib/output.js';
+import { resolveRepoRoot, catalogJsonPathForRoot } from '../../lib/repoPaths.js';
+
+/** Lifecycle statuses from forge-api-core: CATALOG_ELIGIBLE_STATUS + draft/review. */
+const PACK_STATUSES = ['draft', 'review', 'published', 'publish', 'deployed', 'verified', 'rarity_update'] as const;
 
 const PackSchema = z.object({
-  pack_id: z.string(),
-  name: z.string(),
-  status: z.enum(['draft', 'review', 'published']),
+  pack_id: z.string().min(1),
+  name: z.string().min(1),
+  slug: z.string().min(1).optional(),
+  status: z.enum(PACK_STATUSES),
   visibility: z.enum(['public', 'private']).optional(),
   card_theme: z.string().optional(),
-  // Add more fields as needed from forge.ts types
+  trust_score: z.number().min(0).max(100).optional(),
+  verification_state: z.enum(['verified', 'not_verified', 'pending']).optional(),
 });
 
 const program = new Command('validate')
@@ -19,9 +25,12 @@ const program = new Command('validate')
   .action(async (packId = 'all', options) => {
     printHeader('Pack Validation');
 
-    const catalogPath = 'server/data/catalog.json';
+    const { root, source } = resolveRepoRoot();
+    const catalogPath = catalogJsonPathForRoot(root);
+
     if (!existsSync(catalogPath)) {
-      printError('catalog.json not found');
+      printError(`catalog.json not found. Searched from: ${process.cwd()} (source: ${source})`);
+      printInfo('Set FORGE_REPO_ROOT or run from the repo root.');
       process.exit(1);
     }
 

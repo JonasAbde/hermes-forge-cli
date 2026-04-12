@@ -197,26 +197,18 @@ export function printProfileReport(report: ProfileReport): void {
 }
 
 // Middleware to profile commands
-type CommandLike = {
-  name?: () => string;
-  args?: string[];
-};
+export function withProfiling<T extends (...args: unknown[]) => Promise<unknown>>(fn: T): T {
+  return (async (...args: unknown[]) => {
+    const cmd = args[0] as { name?: () => string; args?: string[] } | undefined;
+    const command = cmd?.name?.() ?? 'unknown';
+    const commandArgs = cmd?.args ?? [];
 
-export function withProfiling<TArgs extends unknown[], TResult>(
-  fn: (...args: TArgs) => Promise<TResult>
-): (...args: TArgs) => Promise<TResult> {
-  return async (...args: TArgs): Promise<TResult> => {
-    const commandLike = args[0] as CommandLike | undefined;
-    const command = commandLike?.name?.() || 'unknown';
-    const commandArgs = commandLike?.args || [];
-    
     profiler.start(command, commandArgs);
-    
+
     try {
       profiler.stage('execute');
       const result = await fn(...args);
       profiler.endStage();
-      
       return result;
     } finally {
       const report = profiler.end();
@@ -224,5 +216,5 @@ export function withProfiling<TArgs extends unknown[], TResult>(
         printProfileReport(report);
       }
     }
-  };
+  }) as T;
 }

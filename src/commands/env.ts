@@ -1,4 +1,6 @@
 import { Command } from 'commander';
+import { appendFile, readFile } from 'fs/promises';
+import { join } from 'path';
 import chalk from 'chalk';
 import { 
   loadEnv, 
@@ -9,7 +11,8 @@ import {
   diffEnvironments,
   getMaskedVariables,
   formatEnvForDisplay,
-  getEnvFilePath
+  getEnvFilePath,
+  parseEnvFile,
 } from '../lib/envManager.js';
 import { printHeader, printSuccess, printError, printWarning, printInfo } from '../lib/output.js';
 
@@ -125,10 +128,34 @@ const program = new Command('env')
             printError(`  • Environment file .env.${env} not found`);
           } else if (validation.missing.length > 0) {
             printError(`  • Missing keys: ${validation.missing.join(', ')}`);
-            
+
             if (options.fix) {
-              printInfo(`\nFixing missing keys...`);
-              printWarning('Not yet implemented: copy from .env.example');
+              printInfo('\nApplying --fix: copying missing keys from .env.example...');
+              const examplePath = join(process.cwd(), '.env.example');
+              try {
+                const exampleContent = await readFile(examplePath, 'utf8');
+                const example = parseEnvFile(exampleContent);
+                const envPath = getEnvFilePath(env);
+
+                // Build lines to append: only the missing keys
+                const linesToAppend: string[] = [
+                  '',
+                  `# Auto-added by 'forge env validate --fix' on ${new Date().toISOString()}`,
+                ];
+                for (const key of validation.missing) {
+                  if (key in example) {
+                    linesToAppend.push(`${key}=${example[key]}`);
+                  }
+                }
+                linesToAppend.push('');
+
+                await appendFile(envPath, linesToAppend.join('\n'), 'utf8');
+                printSuccess(`Appended ${validation.missing.length} missing key(s) to .env.${env}`);
+                printWarning('Review the file — placeholder values may need updating.');
+              } catch (fixErr: unknown) {
+                printError(`--fix failed: ${(fixErr as Error).message}`);
+              }
+              return; // exit without process.exit(1) when fix was applied
             }
           }
           

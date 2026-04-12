@@ -89,6 +89,45 @@ const program = new Command('doctor')
         warnings.push('catalog.json missing');
     }
     results.catalog = { ok: catalogOk, path: catalogPath };
+    // 4b. FORGE_API_PROXY — catalog breaks if 5181 is not up when proxy is fully enabled
+    const proxyEnv = process.env.FORGE_API_PROXY;
+    const proxyOn = proxyEnv === '1' || proxyEnv === 'true';
+    const allowOn = process.env.FORGE_ALLOW_PROXY === '1' || process.env.FORGE_ALLOW_PROXY === 'true';
+    if (proxyOn && !allowOn) {
+        warnings.push('FORGE_API_PROXY is set without FORGE_ALLOW_PROXY=1 — Vite uses embedded catalog (proxy ignored).');
+        if (!jsonOutput) {
+            printWarning('FORGE_API_PROXY without FORGE_ALLOW_PROXY → embedded catalog (see web/.env.example).');
+        }
+    }
+    else if (proxyOn && allowOn) {
+        warnings.push('FORGE_API_PROXY + FORGE_ALLOW_PROXY: /api is proxied to 5181 — ensure Forge API is running.');
+        if (!jsonOutput) {
+            printWarning('API proxy active → ensure standalone Forge API is up on port 5181.');
+        }
+    }
+    if (!options.quick && proxyOn && allowOn) {
+        const apiPortFree = !portResults[1]?.isInUse;
+        let apiUnhealthy = apiPortFree;
+        if (!apiUnhealthy) {
+            try {
+                const ac = new AbortController();
+                const t = setTimeout(() => ac.abort(), 3000);
+                const res = await fetch(`http://127.0.0.1:${cfg.ports.api}/health`, { signal: ac.signal });
+                clearTimeout(t);
+                if (!res.ok)
+                    apiUnhealthy = true;
+            }
+            catch {
+                apiUnhealthy = true;
+            }
+        }
+        if (apiUnhealthy) {
+            const w = 'Proxy mode (FORGE_API_PROXY + FORGE_ALLOW_PROXY): standalone API on 5181 is required but not healthy. Start `npm run dev:api`, use `npm run dev:wait-api` to start web after the API is ready, or unset FORGE_ALLOW_PROXY to use Vite embedded catalog.';
+            warnings.push(w);
+            if (!jsonOutput)
+                printWarning(w);
+        }
+    }
     // 5. WSL2
     const wsl = detectWsl();
     if (!jsonOutput) {

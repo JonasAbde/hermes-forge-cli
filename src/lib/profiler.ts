@@ -4,7 +4,7 @@
  */
 
 import { performance } from 'perf_hooks';
-import { readFile } from 'fs/promises';
+import chalk from 'chalk';
 
 interface ProfileEntry {
   name: string;
@@ -177,8 +177,6 @@ export function formatBytes(bytes: number): string {
 
 // Print profile report
 export function printProfileReport(report: ProfileReport): void {
-  const chalk = require('chalk');
-  
   console.log('');
   console.log(chalk.bold.cyan('Performance Profile'));
   console.log(chalk.gray('─'.repeat(50)));
@@ -199,18 +197,18 @@ export function printProfileReport(report: ProfileReport): void {
 }
 
 // Middleware to profile commands
-export function withProfiling(fn: (...args: any[]) => Promise<any>) {
-  return async (...args: any[]) => {
-    const command = (args[0]?.name()) || 'unknown';
-    const commandArgs = args[0]?.args || [];
-    
+export function withProfiling<T extends (...args: unknown[]) => Promise<unknown>>(fn: T): T {
+  return (async (...args: unknown[]) => {
+    const cmd = args[0] as { name?: () => string; args?: string[] } | undefined;
+    const command = cmd?.name?.() ?? 'unknown';
+    const commandArgs = cmd?.args ?? [];
+
     profiler.start(command, commandArgs);
-    
+
     try {
       profiler.stage('execute');
       const result = await fn(...args);
       profiler.endStage();
-      
       return result;
     } finally {
       const report = profiler.end();
@@ -218,5 +216,5 @@ export function withProfiling(fn: (...args: any[]) => Promise<any>) {
         printProfileReport(report);
       }
     }
-  };
+  }) as T;
 }

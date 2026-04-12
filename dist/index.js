@@ -30,6 +30,7 @@ import upgradeCommand from './commands/upgrade.js';
 import scheduleCommand from './commands/schedule.js';
 import notifyCommand from './commands/notify.js';
 import workspaceCommand from './commands/workspace.js';
+import interactiveCommand from './commands/interactive.js';
 program.addCommand(statusCommand);
 program.addCommand(doctorCommand);
 program.addCommand(devCommand);
@@ -50,6 +51,7 @@ program.addCommand(upgradeCommand);
 program.addCommand(scheduleCommand);
 program.addCommand(notifyCommand);
 program.addCommand(workspaceCommand);
+program.addCommand(interactiveCommand);
 program.parse(process.argv);
 if (!process.argv.slice(2).length) {
     printHeader('Forge CLI');

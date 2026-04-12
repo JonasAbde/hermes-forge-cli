@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { execa } from 'execa';
 import chalk from 'chalk';
 import { config } from '../lib/configManager.js';
 import { printHeader, printSuccess, printError, printInfo, printWarning } from '../lib/output.js';
@@ -8,24 +9,24 @@ interface AliasMap {
   [name: string]: string;
 }
 
-// Get aliases from config
 function getAliases(): AliasMap {
   const cfg = config.get();
   return (cfg.aliases as AliasMap) || {};
 }
 
-// Save aliases to config
 function saveAliases(aliases: AliasMap): void {
-  // We need to add aliases support to configManager first
-  // For now, we'll use a workaround
-  const cfg = config as any;
-  if (cfg.set) {
-    cfg.set('aliases', aliases);
-  }
+  (config as unknown as { set(k: string, v: unknown): void }).set('aliases', aliases);
 }
 
+/** All top-level built-in command names — cannot be overridden by aliases. */
+const RESERVED = new Set([
+  'status', 'doctor', 'dev', 'docs', 'open', 'pack', 'mcp', 'config', 'env',
+  'logs', 'monitor', 'init', 'plugin', 'completion', 'alias', 'backup', 'upgrade',
+  'schedule', 'notify', 'workspace', 'interactive', 'help', 'version',
+]);
+
 const program = new Command('alias')
-  .description('Manage command aliases')
+  .description('Manage command aliases for forge')
   .addCommand(
     new Command('list')
       .description('List all aliases')
@@ -33,71 +34,70 @@ const program = new Command('alias')
       .option('--json', 'output as JSON')
       .action((options) => {
         const aliases = getAliases();
-        
+
         if (options.json) {
           console.log(JSON.stringify(aliases, null, 2));
           return;
         }
-        
+
         printHeader('Command Aliases');
-        
+
         const entries = Object.entries(aliases);
         if (entries.length === 0) {
-          printInfo('No aliases defined');
-          printInfo('Create with: forge alias set <name> <command>');
+          printInfo('No aliases defined.');
+          printInfo('Create one: forge alias set <name> "<command>"');
+          printInfo('Or load defaults: forge alias init');
           return;
         }
-        
+
         const table = new Table({
           head: [chalk.bold('Alias'), chalk.bold('Command')],
           colWidths: [20, 60],
-          style: { head: ['cyan'] }
+          style: { head: ['cyan'] },
         });
-        
+
         entries.forEach(([name, command]) => {
           table.push([chalk.yellow(name), command]);
         });
-        
+
         console.log(table.toString());
         printInfo(`\nTotal: ${entries.length} alias(es)`);
+        printInfo('Run any alias with: forge alias run <name>');
       })
   )
   .addCommand(
     new Command('set')
       .description('Create or update an alias')
-      .argument('<name>', 'alias name')
-      .argument('<command>', 'command to alias (use quotes for multi-word)')
-      .action((name, command) => {
+      .argument('<name>', 'alias name (no spaces)')
+      .argument('<command...>', 'forge command to run (e.g. "pack list --catalog")')
+      .action((name, commandParts: string[]) => {
         printHeader('Set Alias');
-        
-        // Validate alias name
-        if (name.includes(' ') || name.includes('\t')) {
-          printError('Alias name cannot contain spaces');
+
+        if (/\s/.test(name)) {
+          printError('Alias name cannot contain spaces.');
           process.exit(1);
         }
-        
-        // Check for reserved names
-        const reserved = ['status', 'doctor', 'dev', 'docs', 'open', 'pack', 'mcp', 'config', 'env', 'logs', 'monitor', 'init', 'plugin', 'alias', 'help'];
-        if (reserved.includes(name)) {
+
+        if (RESERVED.has(name)) {
           printError(`Cannot override reserved command: ${name}`);
           process.exit(1);
         }
-        
+
+        const command = commandParts.join(' ');
         const aliases = getAliases();
         const existed = name in aliases;
-        
+
         aliases[name] = command;
         saveAliases(aliases);
-        
+
         if (existed) {
           printSuccess(`Updated alias: ${chalk.yellow(name)}`);
         } else {
           printSuccess(`Created alias: ${chalk.yellow(name)}`);
         }
-        
-        printInfo(`  ${name} → ${chalk.gray(command)}`);
-        printInfo('\nUsage:');
-        printInfo(`  forge ${name}`);
+        printInfo(`  ${chalk.yellow(name)} → ${chalk.gray(command)}`);
+        printInfo('\nRun it with:');
+        printInfo(`  forge alias run ${name}`);
       })
   )
   .addCommand(
@@ -107,114 +107,135 @@ const program = new Command('alias')
       .argument('<name>', 'alias name to remove')
       .action((name) => {
         printHeader('Remove Alias');
-        
+
         const aliases = getAliases();
-        
+
         if (!(name in aliases)) {
           printError(`Alias not found: ${name}`);
           process.exit(1);
         }
-        
+
+        const command = aliases[name];
         delete aliases[name];
         saveAliases(aliases);
-        
+
         printSuccess(`Removed alias: ${name}`);
+        printInfo(`  was: ${chalk.gray(command)}`);
       })
   )
   .addCommand(
     new Command('show')
-      .description('Show alias details')
+      .description('Show details for an alias')
       .argument('<name>', 'alias name')
       .action((name) => {
         const aliases = getAliases();
-        
+
         if (!(name in aliases)) {
           printError(`Alias not found: ${name}`);
           process.exit(1);
         }
-        
+
         printHeader(`Alias: ${name}`);
         console.log(`  ${chalk.yellow(name)} → ${chalk.cyan(aliases[name])}`);
         console.log('');
-        printInfo('Usage:');
-        console.log(`  forge ${name}`);
+        printInfo('Run it with:');
+        console.log(`  forge alias run ${name}`);
       })
   )
   .addCommand(
     new Command('run')
-      .description('Execute an alias (used internally)')
+      .description('Execute an alias by name')
       .argument('<name>', 'alias name')
       .allowUnknownOption()
-      .action((name) => {
+      .action(async (name, _opts, cmd) => {
         const aliases = getAliases();
-        
+
         if (!(name in aliases)) {
           printError(`Unknown alias: ${name}`);
+          printInfo('List aliases with: forge alias list');
           process.exit(1);
         }
-        
-        // Get the command
-        const command = aliases[name];
-        
-        printInfo(`Running: ${chalk.gray(command)}`);
-        console.log('');
-        
-        // Execute would be handled by the CLI entry point
-        // This is a placeholder for the actual execution logic
-        console.log(`Would execute: ${command}`);
+
+        const aliasedCommand = aliases[name];
+        // Extra args passed after the alias name (e.g. forge alias run p --json)
+        const extraArgs = cmd.args.slice(1);
+
+        const parts = aliasedCommand.trim().split(/\s+/);
+        const fullArgs = [...parts, ...extraArgs];
+
+        printInfo(`Running: forge ${chalk.gray(fullArgs.join(' '))}\n`);
+
+        try {
+          // Find the forge binary: prefer the one in PATH, fallback to this process
+          const forgeBin = process.argv[1]; // current entry point (bin/forge.js)
+          await execa(process.execPath, [forgeBin, ...fullArgs], {
+            stdio: 'inherit',
+            cwd: process.cwd(),
+            env: { ...process.env },
+          });
+        } catch (err: unknown) {
+          const e = err as { exitCode?: number; signal?: string; message?: string };
+          if (e.signal === 'SIGINT') {
+            // User Ctrl+C — exit cleanly
+            process.exit(130);
+          }
+          process.exit(e.exitCode ?? 1);
+        }
       })
   )
   .addCommand(
     new Command('init')
-      .description('Initialize with common aliases')
+      .description('Add common shortcut aliases')
       .option('--force', 'overwrite existing aliases')
       .action((options) => {
         printHeader('Initialize Common Aliases');
-        
+
         const commonAliases: AliasMap = {
-          's': 'status',
-          'st': 'status',
-          'd': 'dev',
-          'dd': 'dev --with-docs',
-          'doc': 'docs',
-          'dr': 'doctor',
-          'm': 'monitor',
-          'l': 'logs',
-          'p': 'pack list',
-          'pl': 'pack list',
-          'pb': 'pack build',
-          'mcp-start': 'mcp start',
+          s:          'status',
+          st:         'status',
+          d:          'dev',
+          dd:         'dev --with-docs',
+          doc:        'docs',
+          dr:         'doctor',
+          m:          'monitor',
+          l:          'logs',
+          p:          'pack list',
+          pl:         'pack list',
+          pb:         'pack build',
+          'mcp-start':'mcp start',
           'mcp-stop': 'mcp stop',
-          'open-web': 'open web',
-          'open-docs': 'open docs',
+          // open targets: docs, hub, showcase, api (valid targets in open.ts)
+          'open-docs':    'open docs',
+          'open-hub':     'open hub',
+          'open-showcase':'open showcase',
+          'open-api':     'open api',
         };
-        
+
         const aliases = getAliases();
         let added = 0;
         let skipped = 0;
-        
-        for (const [name, command] of Object.entries(commonAliases)) {
-          if (name in aliases && !options.force) {
+
+        for (const [aliasName, command] of Object.entries(commonAliases)) {
+          if (aliasName in aliases && !options.force) {
             skipped++;
             continue;
           }
-          aliases[name] = command;
+          aliases[aliasName] = command;
           added++;
         }
-        
+
         saveAliases(aliases);
-        
-        if (added > 0) {
-          printSuccess(`Added ${added} common alias(es)`);
-        }
-        if (skipped > 0) {
-          printWarning(`Skipped ${skipped} existing alias(es) (use --force to overwrite)`);
-        }
-        
-        printInfo('\nNew aliases:');
-        Object.entries(commonAliases).forEach(([name, cmd]) => {
-          console.log(`  ${chalk.yellow(name.padEnd(12))} → ${chalk.gray(cmd)}`);
+
+        if (added > 0) printSuccess(`Added ${added} alias(es).`);
+        if (skipped > 0) printWarning(`Skipped ${skipped} existing alias(es). Use --force to overwrite.`);
+
+        const table = new Table({
+          head: [chalk.bold('Alias'), chalk.bold('Command')],
+          colWidths: [16, 40],
+          style: { head: ['cyan'] },
         });
+        Object.entries(commonAliases).forEach(([n, c]) => table.push([chalk.yellow(n), c]));
+        console.log('\n' + table.toString());
       })
   );
 

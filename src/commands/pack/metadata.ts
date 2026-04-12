@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import { readFileSync, existsSync, writeFileSync } from 'fs';
 import { printHeader, printSuccess, printError, printInfo } from '../../lib/output.js';
+import { resolveRepoRoot, catalogJsonPathForRoot } from '../../lib/repoPaths.js';
 
 /**
  * Generate compact per-pack metadata suitable for MCP tool payloads.
@@ -15,9 +16,12 @@ const program = new Command('metadata')
   .action((options) => {
     printHeader('Pack Metadata');
 
-    const catalogPath = 'server/data/catalog.json';
+    const { root, source } = resolveRepoRoot();
+    const catalogPath = catalogJsonPathForRoot(root);
+
     if (!existsSync(catalogPath)) {
-      printError('catalog.json not found at server/data/catalog.json');
+      printError(`catalog.json not found. Searched from: ${process.cwd()} (source: ${source})`);
+      printInfo('Set FORGE_REPO_ROOT or run from the repo root.');
       process.exit(1);
     }
 

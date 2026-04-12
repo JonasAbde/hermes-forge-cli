@@ -1,7 +1,8 @@
 import { Command } from 'commander';
 import { z } from 'zod';
 import { readFileSync, existsSync } from 'fs';
-import { printHeader, printSuccess, printError } from '../../lib/output.js';
+import { printHeader, printSuccess, printError, printInfo } from '../../lib/output.js';
+import { resolveRepoRoot, catalogJsonPathForRoot } from '../../lib/repoPaths.js';
 /** Lifecycle statuses from forge-api-core: CATALOG_ELIGIBLE_STATUS + draft/review. */
 const PACK_STATUSES = ['draft', 'review', 'published', 'publish', 'deployed', 'verified', 'rarity_update'];
 const PackSchema = z.object({
@@ -20,9 +21,11 @@ const program = new Command('validate')
     .option('--strict', 'Fail on warnings')
     .action(async (packId = 'all', options) => {
     printHeader('Pack Validation');
-    const catalogPath = 'server/data/catalog.json';
+    const { root, source } = resolveRepoRoot();
+    const catalogPath = catalogJsonPathForRoot(root);
     if (!existsSync(catalogPath)) {
-        printError('catalog.json not found');
+        printError(`catalog.json not found. Searched from: ${process.cwd()} (source: ${source})`);
+        printInfo('Set FORGE_REPO_ROOT or run from the repo root.');
         process.exit(1);
     }
     try {

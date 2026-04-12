@@ -3,6 +3,7 @@
  * Tracks execution time and resource usage
  */
 import { performance } from 'perf_hooks';
+import chalk from 'chalk';
 class Profiler {
     data = null;
     activeEntry = null;
@@ -123,7 +124,6 @@ export function formatBytes(bytes) {
 }
 // Print profile report
 export function printProfileReport(report) {
-    const chalk = require('chalk');
     console.log('');
     console.log(chalk.bold.cyan('Performance Profile'));
     console.log(chalk.gray('─'.repeat(50)));
@@ -143,9 +143,10 @@ export function printProfileReport(report) {
 }
 // Middleware to profile commands
 export function withProfiling(fn) {
-    return async (...args) => {
-        const command = (args[0]?.name()) || 'unknown';
-        const commandArgs = args[0]?.args || [];
+    return (async (...args) => {
+        const cmd = args[0];
+        const command = cmd?.name?.() ?? 'unknown';
+        const commandArgs = cmd?.args ?? [];
         profiler.start(command, commandArgs);
         try {
             profiler.stage('execute');
@@ -159,6 +160,6 @@ export function withProfiling(fn) {
                 printProfileReport(report);
             }
         }
-    };
+    });
 }
 //# sourceMappingURL=profiler.js.map

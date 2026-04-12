@@ -7,56 +7,79 @@ import { printHeader, printSuccess, printInfo, printWarning, printError } from '
 
 const BASH_COMPLETION = `
 # Forge CLI Bash Completion
-# Source this file: source <(forge completion bash)
+# Quick setup: source <(forge completion bash)
+# Permanent:   forge completion bash --install
 
 _forge_completions() {
-  local cur prev opts
+  local cur prev
   COMPREPLY=()
   cur="\${COMP_WORDS[COMP_CWORD]}"
-  prev="\${COMP_WORDS[COMP_CWORD-1]}"
-  
-  # Main commands
-  local commands="status doctor dev docs open pack mcp config env logs monitor init plugin completion alias help"
-  
-  # Subcommands based on first argument
-  if [ $COMP_CWORD -eq 1 ]; then
-    COMPREPLY=( $(compgen -W "\${commands}" -- \${cur}) )
+
+  # Full list of top-level commands
+  local commands="status doctor dev docs open pack mcp config env logs monitor init plugin completion alias backup upgrade schedule notify workspace interactive help"
+
+  if [ \$COMP_CWORD -eq 1 ]; then
+    COMPREPLY=( \$(compgen -W "\${commands}" -- \${cur}) )
     return 0
   fi
-  
-  # Complete based on command
+
   case "\${COMP_WORDS[1]}" in
+    status)
+      COMPREPLY=( \$(compgen -W "--watch --json --clear-locks --help" -- \${cur}) ) ;;
     dev)
-      local opts="--with-docs --only-api --only-web --only-docs --port-offset --force --help"
-      COMPREPLY=( $(compgen -W "\${opts}" -- \${cur}) )
-      ;;
+      COMPREPLY=( \$(compgen -W "--with-docs --only-api --only-web --only-docs --forge-api-proxy --port-offset --force --log-to-file --help" -- \${cur}) ) ;;
     doctor)
-      local opts="--strict --json --quick --deep --help"
-      COMPREPLY=( $(compgen -W "\${opts}" -- \${cur}) )
-      ;;
+      COMPREPLY=( \$(compgen -W "--strict --json --quick --deep --help" -- \${cur}) ) ;;
+    docs)
+      COMPREPLY=( \$(compgen -W "--port --no-open --help" -- \${cur}) ) ;;
+    open)
+      COMPREPLY=( \$(compgen -W "docs hub showcase catalog chat api" -- \${cur}) ) ;;
     pack)
-      local pack_commands="list validate build metadata"
-      COMPREPLY=( $(compgen -W "\${pack_commands}" -- \${cur}) )
-      ;;
+      local pack_cmds="list validate build metadata"
+      if [ \$COMP_CWORD -eq 2 ]; then
+        COMPREPLY=( \$(compgen -W "\${pack_cmds}" -- \${cur}) )
+      else
+        case "\${COMP_WORDS[2]}" in
+          list)     COMPREPLY=( \$(compgen -W "--catalog --theme --json" -- \${cur}) ) ;;
+          validate) COMPREPLY=( \$(compgen -W "--strict" -- \${cur}) ) ;;
+          build)    COMPREPLY=( \$(compgen -W "--watch --out" -- \${cur}) ) ;;
+          metadata) COMPREPLY=( \$(compgen -W "--catalog --out --format" -- \${cur}) ) ;;
+        esac
+      fi ;;
     mcp)
-      local mcp_commands="start stop status test tools"
-      COMPREPLY=( $(compgen -W "\${mcp_commands}" -- \${cur}) )
-      ;;
-    plugin)
-      local plugin_commands="list search install uninstall update validate exec create"
-      COMPREPLY=( $(compgen -W "\${plugin_commands}" -- \${cur}) )
-      ;;
+      local mcp_cmds="start stop status test tools"
+      if [ \$COMP_CWORD -eq 2 ]; then
+        COMPREPLY=( \$(compgen -W "\${mcp_cmds}" -- \${cur}) )
+      fi ;;
+    config)
+      COMPREPLY=( \$(compgen -W "get set reset --json --help" -- \${cur}) ) ;;
     env)
-      local env_commands="use list validate diff show"
-      COMPREPLY=( $(compgen -W "\${env_commands}" -- \${cur}) )
-      ;;
+      COMPREPLY=( \$(compgen -W "use list validate diff show" -- \${cur}) ) ;;
     logs)
-      local log_opts="--follow --lines --level --list --clear --help"
-      COMPREPLY=( $(compgen -W "\${log_opts}" -- \${cur}) )
-      ;;
+      COMPREPLY=( \$(compgen -W "--follow --lines --level --list --clear --help" -- \${cur}) ) ;;
+    alias)
+      local alias_cmds="list set remove show run init"
+      if [ \$COMP_CWORD -eq 2 ]; then
+        COMPREPLY=( \$(compgen -W "\${alias_cmds}" -- \${cur}) )
+      fi ;;
+    backup)
+      COMPREPLY=( \$(compgen -W "create restore list delete auto --help" -- \${cur}) ) ;;
+    schedule)
+      COMPREPLY=( \$(compgen -W "add list remove run logs search --help" -- \${cur}) ) ;;
+    notify)
+      COMPREPLY=( \$(compgen -W "send config setup test --help" -- \${cur}) ) ;;
+    workspace)
+      COMPREPLY=( \$(compgen -W "list create switch info detect init --help" -- \${cur}) ) ;;
+    upgrade)
+      COMPREPLY=( \$(compgen -W "--check --force --help" -- \${cur}) ) ;;
+    plugin)
+      COMPREPLY=( \$(compgen -W "list search install uninstall update validate exec create" -- \${cur}) ) ;;
+    init)
+      COMPREPLY=( \$(compgen -W "pack web-extension mcp-tool templates --help" -- \${cur}) ) ;;
+    completion)
+      COMPREPLY=( \$(compgen -W "bash zsh fish" -- \${cur}) ) ;;
     *)
-      COMPREPLY=()
-      ;;
+      COMPREPLY=() ;;
   esac
 }
 
@@ -67,6 +90,8 @@ const ZSH_COMPLETION = `
 #compdef forge
 
 # Forge CLI Zsh Completion
+# Quick setup: source <(forge completion zsh)
+# Permanent:   forge completion zsh --install
 
 _forge_commands() {
   local -a commands
@@ -75,17 +100,24 @@ _forge_commands() {
     'doctor:Run comprehensive system diagnostics'
     'dev:Start Forge development services'
     'docs:Start Forge Docs server'
-    'open:Open services in browser'
+    'open:Open a Forge URL in the browser'
     'pack:Manage Agent Packs'
     'mcp:Manage MCP Registry server'
     'config:Manage CLI configuration'
     'env:Manage environment configurations'
     'logs:View and manage service logs'
-    'monitor:Real-time dashboard for monitoring'
-    'init:Initialize a new Forge project'
+    'monitor:Real-time monitoring dashboard'
+    'init:Initialize a new project'
     'plugin:Manage Forge CLI plugins'
     'completion:Generate shell completions'
-    'help:Display help for command'
+    'alias:Manage command aliases'
+    'backup:Backup and restore data'
+    'upgrade:Upgrade Forge CLI'
+    'schedule:Manage scheduled tasks'
+    'notify:Manage notifications'
+    'workspace:Manage workspaces'
+    'interactive:Interactive guided mode'
+    'help:Display help for a command'
   )
   _describe -t commands 'forge commands' commands
 }
@@ -94,7 +126,7 @@ _forge_pack() {
   local -a pack_commands
   pack_commands=(
     'list:List all packs'
-    'validate:Validate pack structure'
+    'validate:Validate pack schema'
     'build:Build pack metadata and cutouts'
     'metadata:Generate compact metadata for MCP'
   )
@@ -133,46 +165,76 @@ _forge_env() {
   env_commands=(
     'use:Switch to a different environment'
     'list:List all environments'
-    'validate:Validate environment'
-    'diff:Compare environments'
-    'show:Display environment variables'
+    'validate:Validate environment file'
+    'diff:Compare two environment files'
+    'show:Display current environment variables'
   )
   _describe -t env_commands 'env commands' env_commands
 }
 
+_forge_alias() {
+  local -a alias_commands
+  alias_commands=(
+    'list:List all aliases'
+    'set:Create or update an alias'
+    'remove:Remove an alias'
+    'show:Show alias details'
+    'run:Execute an alias'
+    'init:Add common shortcut aliases'
+  )
+  _describe -t alias_commands 'alias commands' alias_commands
+}
+
+_forge_open() {
+  local -a targets
+  targets=('docs' 'hub' 'showcase' 'catalog' 'chat' 'api')
+  _describe -t targets 'open targets' targets
+}
+
 _forge() {
-  local curcontext="$curcontext" state line
+  local curcontext="\$curcontext" state line
   typeset -A opt_args
-  
+
   _arguments -C \\
     '(-h --help)'{-h,--help}'[Show help]' \\
     '(-V --version)'{-V,--version}'[Show version]' \\
+    '--verbose[Enable verbose output]' \\
     '1: :_forge_commands' \\
     '*::arg:->args'
-  
-  case $line[1] in
-    pack)
-      _forge_pack
-      ;;
-    mcp)
-      _forge_mcp
-      ;;
-    plugin)
-      _forge_plugin
-      ;;
-    env)
-      _forge_env
+
+  case \$line[1] in
+    pack)      _forge_pack ;;
+    mcp)       _forge_mcp ;;
+    plugin)    _forge_plugin ;;
+    env)       _forge_env ;;
+    alias)     _forge_alias ;;
+    open)      _forge_open ;;
+    dev)
+      _arguments \\
+        '--with-docs[Start with documentation server]' \\
+        '--only-api[Start only the API]' \\
+        '--only-web[Start only the web app]' \\
+        '--only-docs[Start only Forge Docs]' \\
+        '--forge-api-proxy[Use API proxy instead of embedded catalog]' \\
+        '--port-offset[Add offset to all ports]:offset:(0 1000 2000)' \\
+        '--force[Force start even if services are already running]' \\
+        '--log-to-file[Redirect output to log file]'
       ;;
     doctor)
-      _arguments \
-        '--strict[Exit with code 1 on any warning]' \
-        '--json[Output as JSON]' \
-        '--quick[Skip heavy HTTP checks]' \
-        '--deep[Run smoke-test, smoke-auth, optional smoke-http]'
+      _arguments \\
+        '--strict[Exit with code 1 on any warning]' \\
+        '--json[Output as JSON]' \\
+        '--quick[Skip heavy HTTP checks]' \\
+        '--deep[Run smoke tests]'
+      ;;
+    status)
+      _arguments \\
+        '--watch[Watch mode, refresh every 5 seconds]' \\
+        '--json[Output as JSON]' \\
+        '--clear-locks[Clear stale lock files]'
       ;;
     *)
-      _files
-      ;;
+      _files ;;
   esac
 }
 
@@ -181,60 +243,102 @@ compdef _forge forge
 
 const FISH_COMPLETION = `
 # Forge CLI Fish Completion
+# Quick setup: forge completion fish | source
+# Permanent:   forge completion fish --install
 
-# Main commands
-complete -c forge -n '__fish_use_subcommand' -a 'status' -d 'Show status of all services'
-complete -c forge -n '__fish_use_subcommand' -a 'doctor' -d 'Run system diagnostics'
-complete -c forge -n '__fish_use_subcommand' -a 'dev' -d 'Start development services'
-complete -c forge -n '__fish_use_subcommand' -a 'docs' -d 'Start docs server'
-complete -c forge -n '__fish_use_subcommand' -a 'open' -d 'Open in browser'
-complete -c forge -n '__fish_use_subcommand' -a 'pack' -d 'Manage Agent Packs'
-complete -c forge -n '__fish_use_subcommand' -a 'mcp' -d 'Manage MCP Registry'
-complete -c forge -n '__fish_use_subcommand' -a 'config' -d 'Manage configuration'
-complete -c forge -n '__fish_use_subcommand' -a 'env' -d 'Manage environments'
-complete -c forge -n '__fish_use_subcommand' -a 'logs' -d 'View logs'
-complete -c forge -n '__fish_use_subcommand' -a 'monitor' -d 'Real-time dashboard'
-complete -c forge -n '__fish_use_subcommand' -a 'init' -d 'Initialize project'
-complete -c forge -n '__fish_use_subcommand' -a 'plugin' -d 'Manage plugins'
-complete -c forge -n '__fish_use_subcommand' -a 'completion' -d 'Generate completions'
+# --- Top-level commands ---
+complete -c forge -n '__fish_use_subcommand' -a 'status'      -d 'Show status of all services'
+complete -c forge -n '__fish_use_subcommand' -a 'doctor'      -d 'Run system diagnostics'
+complete -c forge -n '__fish_use_subcommand' -a 'dev'         -d 'Start development services'
+complete -c forge -n '__fish_use_subcommand' -a 'docs'        -d 'Start Forge Docs server'
+complete -c forge -n '__fish_use_subcommand' -a 'open'        -d 'Open a Forge URL in browser'
+complete -c forge -n '__fish_use_subcommand' -a 'pack'        -d 'Manage Agent Packs'
+complete -c forge -n '__fish_use_subcommand' -a 'mcp'         -d 'Manage MCP Registry'
+complete -c forge -n '__fish_use_subcommand' -a 'config'      -d 'Manage CLI configuration'
+complete -c forge -n '__fish_use_subcommand' -a 'env'         -d 'Manage environment files'
+complete -c forge -n '__fish_use_subcommand' -a 'logs'        -d 'View and manage logs'
+complete -c forge -n '__fish_use_subcommand' -a 'monitor'     -d 'Real-time monitoring dashboard'
+complete -c forge -n '__fish_use_subcommand' -a 'init'        -d 'Initialize a new project'
+complete -c forge -n '__fish_use_subcommand' -a 'plugin'      -d 'Manage plugins'
+complete -c forge -n '__fish_use_subcommand' -a 'completion'  -d 'Generate shell completions'
+complete -c forge -n '__fish_use_subcommand' -a 'alias'       -d 'Manage command aliases'
+complete -c forge -n '__fish_use_subcommand' -a 'backup'      -d 'Backup and restore data'
+complete -c forge -n '__fish_use_subcommand' -a 'upgrade'     -d 'Upgrade Forge CLI'
+complete -c forge -n '__fish_use_subcommand' -a 'schedule'    -d 'Manage scheduled tasks'
+complete -c forge -n '__fish_use_subcommand' -a 'notify'      -d 'Manage notifications'
+complete -c forge -n '__fish_use_subcommand' -a 'workspace'   -d 'Manage workspaces'
+complete -c forge -n '__fish_use_subcommand' -a 'interactive' -d 'Interactive guided mode'
 
-# Pack subcommands
-complete -c forge -n '__fish_seen_subcommand_from pack' -a 'list' -d 'List packs'
-complete -c forge -n '__fish_seen_subcommand_from pack' -a 'validate' -d 'Validate pack'
-complete -c forge -n '__fish_seen_subcommand_from pack' -a 'build' -d 'Build pack'
-complete -c forge -n '__fish_seen_subcommand_from pack' -a 'metadata' -d 'Generate metadata'
+# --- open targets ---
+complete -c forge -n '__fish_seen_subcommand_from open' -a 'docs'     -d 'Forge Docs'
+complete -c forge -n '__fish_seen_subcommand_from open' -a 'hub'      -d 'Documentation Hub'
+complete -c forge -n '__fish_seen_subcommand_from open' -a 'showcase' -d 'Showcase'
+complete -c forge -n '__fish_seen_subcommand_from open' -a 'catalog'  -d 'Catalog'
+complete -c forge -n '__fish_seen_subcommand_from open' -a 'chat'     -d 'Chat handoff'
+complete -c forge -n '__fish_seen_subcommand_from open' -a 'api'      -d 'API health'
 
-# MCP subcommands
-complete -c forge -n '__fish_seen_subcommand_from mcp' -a 'start' -d 'Start MCP registry'
-complete -c forge -n '__fish_seen_subcommand_from mcp' -a 'stop' -d 'Stop MCP registry'
+# --- pack subcommands ---
+complete -c forge -n '__fish_seen_subcommand_from pack' -a 'list'     -d 'List packs'
+complete -c forge -n '__fish_seen_subcommand_from pack' -a 'validate' -d 'Validate pack schema'
+complete -c forge -n '__fish_seen_subcommand_from pack' -a 'build'    -d 'Build pack'
+complete -c forge -n '__fish_seen_subcommand_from pack' -a 'metadata' -d 'Generate compact metadata'
+
+# --- mcp subcommands ---
+complete -c forge -n '__fish_seen_subcommand_from mcp' -a 'start'  -d 'Start MCP registry'
+complete -c forge -n '__fish_seen_subcommand_from mcp' -a 'stop'   -d 'Stop MCP registry'
 complete -c forge -n '__fish_seen_subcommand_from mcp' -a 'status' -d 'MCP status'
-complete -c forge -n '__fish_seen_subcommand_from mcp' -a 'test' -d 'Test MCP'
-complete -c forge -n '__fish_seen_subcommand_from mcp' -a 'tools' -d 'MCP tools'
+complete -c forge -n '__fish_seen_subcommand_from mcp' -a 'test'   -d 'Test MCP'
+complete -c forge -n '__fish_seen_subcommand_from mcp' -a 'tools'  -d 'MCP tools'
 
-# Plugin subcommands
-complete -c forge -n '__fish_seen_subcommand_from plugin' -a 'list' -d 'List plugins'
-complete -c forge -n '__fish_seen_subcommand_from plugin' -a 'search' -d 'Search plugins'
-complete -c forge -n '__fish_seen_subcommand_from plugin' -a 'install' -d 'Install plugin'
+# --- alias subcommands ---
+complete -c forge -n '__fish_seen_subcommand_from alias' -a 'list'   -d 'List aliases'
+complete -c forge -n '__fish_seen_subcommand_from alias' -a 'set'    -d 'Create or update'
+complete -c forge -n '__fish_seen_subcommand_from alias' -a 'remove' -d 'Remove an alias'
+complete -c forge -n '__fish_seen_subcommand_from alias' -a 'show'   -d 'Show alias details'
+complete -c forge -n '__fish_seen_subcommand_from alias' -a 'run'    -d 'Execute an alias'
+complete -c forge -n '__fish_seen_subcommand_from alias' -a 'init'   -d 'Add common aliases'
+
+# --- plugin subcommands ---
+complete -c forge -n '__fish_seen_subcommand_from plugin' -a 'list'      -d 'List plugins'
+complete -c forge -n '__fish_seen_subcommand_from plugin' -a 'search'    -d 'Search plugins'
+complete -c forge -n '__fish_seen_subcommand_from plugin' -a 'install'   -d 'Install plugin'
 complete -c forge -n '__fish_seen_subcommand_from plugin' -a 'uninstall' -d 'Uninstall plugin'
-complete -c forge -n '__fish_seen_subcommand_from plugin' -a 'update' -d 'Update plugin'
+complete -c forge -n '__fish_seen_subcommand_from plugin' -a 'update'    -d 'Update plugin'
+complete -c forge -n '__fish_seen_subcommand_from plugin' -a 'validate'  -d 'Validate plugin'
+complete -c forge -n '__fish_seen_subcommand_from plugin' -a 'exec'      -d 'Execute plugin command'
+complete -c forge -n '__fish_seen_subcommand_from plugin' -a 'create'    -d 'Create new plugin'
 
-# Dev options
-complete -c forge -n '__fish_seen_subcommand_from dev' -l 'with-docs' -d 'Start with docs'
-complete -c forge -n '__fish_seen_subcommand_from dev' -l 'only-api' -d 'API only'
-complete -c forge -n '__fish_seen_subcommand_from dev' -l 'only-web' -d 'Web only'
-complete -c forge -n '__fish_seen_subcommand_from dev' -l 'only-docs' -d 'Docs only'
-complete -c forge -n '__fish_seen_subcommand_from dev' -l 'port-offset' -r -d 'Port offset'
-complete -c forge -n '__fish_seen_subcommand_from dev' -l 'force' -d 'Force restart'
+# --- env subcommands ---
+complete -c forge -n '__fish_seen_subcommand_from env' -a 'use'      -d 'Switch environment'
+complete -c forge -n '__fish_seen_subcommand_from env' -a 'list'     -d 'List environments'
+complete -c forge -n '__fish_seen_subcommand_from env' -a 'validate' -d 'Validate environment'
+complete -c forge -n '__fish_seen_subcommand_from env' -a 'diff'     -d 'Compare environments'
+complete -c forge -n '__fish_seen_subcommand_from env' -a 'show'     -d 'Show variables'
 
-# Doctor options
+# --- dev options ---
+complete -c forge -n '__fish_seen_subcommand_from dev' -l 'with-docs'       -d 'Start with docs server'
+complete -c forge -n '__fish_seen_subcommand_from dev' -l 'only-api'        -d 'API only'
+complete -c forge -n '__fish_seen_subcommand_from dev' -l 'only-web'        -d 'Web only'
+complete -c forge -n '__fish_seen_subcommand_from dev' -l 'only-docs'       -d 'Docs only'
+complete -c forge -n '__fish_seen_subcommand_from dev' -l 'forge-api-proxy' -d 'Use API proxy'
+complete -c forge -n '__fish_seen_subcommand_from dev' -l 'port-offset'     -r -d 'Port offset'
+complete -c forge -n '__fish_seen_subcommand_from dev' -l 'force'           -d 'Force restart'
+complete -c forge -n '__fish_seen_subcommand_from dev' -l 'log-to-file'     -d 'Log to file'
+
+# --- doctor options ---
 complete -c forge -n '__fish_seen_subcommand_from doctor' -l 'strict' -d 'Exit 1 on warnings'
-complete -c forge -n '__fish_seen_subcommand_from doctor' -l 'json' -d 'JSON output'
-complete -c forge -n '__fish_seen_subcommand_from doctor' -l 'quick' -d 'Skip heavy checks'
-complete -c forge -n '__fish_seen_subcommand_from doctor' -l 'deep' -d 'Run smoke tests'
+complete -c forge -n '__fish_seen_subcommand_from doctor' -l 'json'   -d 'JSON output'
+complete -c forge -n '__fish_seen_subcommand_from doctor' -l 'quick'  -d 'Skip HTTP checks'
+complete -c forge -n '__fish_seen_subcommand_from doctor' -l 'deep'   -d 'Run smoke tests'
 
-# Global options
+# --- status options ---
+complete -c forge -n '__fish_seen_subcommand_from status' -l 'watch'       -d 'Watch mode'
+complete -c forge -n '__fish_seen_subcommand_from status' -l 'json'        -d 'JSON output'
+complete -c forge -n '__fish_seen_subcommand_from status' -l 'clear-locks' -d 'Clear stale locks'
+
+# --- global options ---
 complete -c forge -l 'verbose' -d 'Enable verbose output'
-complete -c forge -l 'help' -d 'Show help'
+complete -c forge -l 'help'    -d 'Show help'
 complete -c forge -l 'version' -d 'Show version'
 `;
 

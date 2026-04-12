@@ -2,34 +2,55 @@ import { Command } from 'commander';
 import { readFileSync, existsSync } from 'fs';
 import Table from 'cli-table3';
 import chalk from 'chalk';
-import { printHeader } from '../../lib/output.js';
+import { printHeader, printError, printInfo } from '../../lib/output.js';
+import { resolveRepoRoot, catalogJsonPathForRoot } from '../../lib/repoPaths.js';
+
+/** Statuses considered catalog-eligible (mirrors forge-api-core.mjs). */
+const CATALOG_ELIGIBLE_STATUS = new Set([
+  'published', 'publish', 'deployed', 'verified', 'rarity_update',
+]);
+
+interface Pack {
+  pack_id: string;
+  name?: string;
+  card_name?: string;
+  card_theme?: string;
+  status?: string;
+  visibility?: string;
+  trust_score?: number;
+  verification_state?: string;
+}
 
 const program = new Command('list')
   .description('List packs from catalog.json')
-  .option('--catalog', 'Only show catalog-eligible packs')
-  .option('--theme <theme>', 'Filter by theme')
+  .option('--catalog', 'Only show catalog-eligible packs (public + published/deployed)')
+  .option('--theme <theme>', 'Filter by card_theme (case-insensitive)')
   .option('--json', 'Output as JSON')
   .action((options) => {
     printHeader('Pack List');
 
-    const catalogPath = 'server/data/catalog.json';
+    const { root, source } = resolveRepoRoot();
+    const catalogPath = catalogJsonPathForRoot(root);
+
     if (!existsSync(catalogPath)) {
-      console.error('catalog.json not found at server/data/catalog.json');
+      printError(`catalog.json not found. Searched from: ${process.cwd()} (source: ${source})`);
+      printInfo('Set FORGE_REPO_ROOT or run from the repo root.');
       process.exit(1);
     }
 
     try {
       const catalog = JSON.parse(readFileSync(catalogPath, 'utf8'));
-      let packs = catalog.packs || [];
+      let packs: Pack[] = catalog.packs || [];
 
       if (options.catalog) {
-        packs = packs.filter((p: any) => p.visibility === 'public' && p.status === 'published');
+        packs = packs.filter(
+          (p) => p.visibility === 'public' && CATALOG_ELIGIBLE_STATUS.has(p.status ?? ''),
+        );
       }
 
       if (options.theme) {
-        packs = packs.filter((p: any) => 
-          p.card_theme?.toLowerCase() === options.theme.toLowerCase()
-        );
+        const needle = (options.theme as string).toLowerCase();
+        packs = packs.filter((p) => (p.card_theme ?? '').toLowerCase() === needle);
       }
 
       if (options.json) {
@@ -43,25 +64,30 @@ const program = new Command('list')
           chalk.bold('Name'),
           chalk.bold('Theme'),
           chalk.bold('Status'),
-          chalk.bold('Visibility')
+          chalk.bold('Trust'),
+          chalk.bold('Verified'),
         ],
-        colWidths: [18, 25, 12, 12, 12]
+        colWidths: [32, 22, 14, 14, 7, 10],
       });
 
-      packs.forEach((pack: any) => {
+      packs.forEach((pack) => {
+        const verified = pack.verification_state === 'verified'
+          ? chalk.green('✓')
+          : chalk.gray('—');
         table.push([
-          pack.pack_id,
-          pack.name || pack.card_name || '—',
+          chalk.cyan(pack.pack_id),
+          pack.card_name || pack.name || '—',
           pack.card_theme || '—',
           pack.status || '—',
-          pack.visibility || 'private'
+          pack.trust_score != null ? String(pack.trust_score) : '—',
+          verified,
         ]);
       });
 
       console.log(table.toString());
-      console.log(`\nTotal: ${packs.length} packs`);
-    } catch (error: any) {
-      console.error('Failed to load catalog:', error.message);
+      printInfo(`\nTotal: ${packs.length} pack(s) | catalog path: ${catalogPath}`);
+    } catch (err: unknown) {
+      printError(`Failed to load catalog: ${(err as Error).message}`);
       process.exit(1);
     }
   });

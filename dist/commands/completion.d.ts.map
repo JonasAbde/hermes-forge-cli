@@ -1,1 +1,1 @@
-{"version":3,"file":"completion.d.ts","sourceRoot":"","sources":["../../src/commands/completion.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,MAAM,WAAW,CAAC;AAqQpC,QAAA,MAAM,OAAO,SAmET,CAAC;AAEL,eAAe,OAAO,CAAC"}
+{"version":3,"file":"completion.d.ts","sourceRoot":"","sources":["../../src/commands/completion.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,MAAM,WAAW,CAAC;AA6WpC,QAAA,MAAM,OAAO,SAmET,CAAC;AAEL,eAAe,OAAO,CAAC"}

@@ -1,4 +1,5 @@
 import { appendFile, mkdir, readFile, stat, unlink, rename, readdir } from 'fs/promises';
+import { watch } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import chalk from 'chalk';
@@ -119,22 +120,39 @@ export async function readLogs(service: string, lines: number): Promise<LogEntry
 }
 
 export function tailLogs(service: string, callback: (entry: LogEntry) => void): () => void {
-  const { watch } = require('fs');
   const logPath = getLogFilePath(service);
-  
-  // Start watching
-  const watcher = watch(logPath, (eventType: string) => {
-    if (eventType === 'change') {
-      // Read last line
-      readLogs(service, 1).then(entries => {
-        if (entries.length > 0) {
-          callback(entries[0]);
+
+  // Track file size so we only read new content since the last read
+  let lastSize = 0;
+  stat(logPath).then(s => { lastSize = s.size; }).catch(() => { lastSize = 0; });
+
+  const watcher = watch(logPath, (eventType) => {
+    if (eventType !== 'change') return;
+    stat(logPath)
+      .then(async (s) => {
+        if (s.size <= lastSize) return;
+        const content = await readFile(logPath, 'utf8');
+        const lines = content.trim().split('\n').filter(Boolean);
+        // Emit only lines that are new since the last read
+        const currentLineCount = lines.length;
+        const newLines = lines.slice(Math.max(0, currentLineCount - Math.ceil((s.size - lastSize) / 80)));
+        lastSize = s.size;
+        for (const line of newLines) {
+          try {
+            callback(JSON.parse(line) as LogEntry);
+          } catch {
+            callback({
+              timestamp: new Date().toISOString(),
+              service,
+              level: 'info',
+              message: line,
+            });
+          }
         }
-      });
-    }
+      })
+      .catch(() => {/* file disappeared during watch */});
   });
-  
-  // Return unsubscribe function
+
   return () => watcher.close();
 }
 

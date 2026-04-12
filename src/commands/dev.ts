@@ -116,6 +116,15 @@ const program = new Command('dev')
         childEnv.FORGE_FORCE_EMBEDDED_CATALOG = '1'
         delete childEnv.FORGE_API_PROXY
       }
+      // Apply port offset: set PORT env vars that each vite/node process reads
+      if (offset !== 0) {
+        childEnv.FORGE_PORT_WEB  = String(cfg.ports.web  + offset)
+        childEnv.FORGE_PORT_API  = String(cfg.ports.api  + offset)
+        childEnv.FORGE_PORT_DOCS = String(cfg.ports.docs + offset)
+        childEnv.FORGE_PORT_MCP  = String(cfg.ports.mcp  + offset)
+        // Vite reads PORT for its dev server; individual sub-commands also honour these
+        childEnv.PORT = String(cfg.ports.web + offset)
+      }
 
       // Start the child process
       childProcess = execa(command, {

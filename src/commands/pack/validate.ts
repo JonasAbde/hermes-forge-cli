@@ -3,13 +3,18 @@ import { z } from 'zod';
 import { readFileSync, existsSync } from 'fs';
 import { printHeader, printSuccess, printError, printWarning } from '../../lib/output.js';
 
+/** Lifecycle statuses from forge-api-core: CATALOG_ELIGIBLE_STATUS + draft/review. */
+const PACK_STATUSES = ['draft', 'review', 'published', 'publish', 'deployed', 'verified', 'rarity_update'] as const;
+
 const PackSchema = z.object({
-  pack_id: z.string(),
-  name: z.string(),
-  status: z.enum(['draft', 'review', 'published']),
+  pack_id: z.string().min(1),
+  name: z.string().min(1),
+  slug: z.string().min(1).optional(),
+  status: z.enum(PACK_STATUSES),
   visibility: z.enum(['public', 'private']).optional(),
   card_theme: z.string().optional(),
-  // Add more fields as needed from forge.ts types
+  trust_score: z.number().min(0).max(100).optional(),
+  verification_state: z.enum(['verified', 'not_verified', 'pending']).optional(),
 });
 
 const program = new Command('validate')

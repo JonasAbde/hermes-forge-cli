@@ -4,10 +4,18 @@ Official CLI for Hermes Forge Platform.
 
 ## Installation
 
-From the monorepo root:
+From the repository root:
 
 ```bash
 npm install --workspace=cli
+```
+
+**Invoking the CLI without a global install:** use the root script (builds the workspace then runs `cli/dist`):
+
+```bash
+npm run forge -- status
+npm run forge -- doctor
+# …same pattern for any subcommand
 ```
 
 Or install globally once published:

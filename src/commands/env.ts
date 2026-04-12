@@ -13,6 +13,11 @@ import {
 } from '../lib/envManager.js';
 import { printHeader, printSuccess, printError, printWarning, printInfo } from '../lib/output.js';
 
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
 const program = new Command('env')
   .description('Manage environment configurations')
   .addCommand(
@@ -52,8 +57,8 @@ const program = new Command('env')
           
           console.log(table.toString());
           
-        } catch (error: any) {
-          printError(`Failed to switch environment: ${error.message}`);
+        } catch (error: unknown) {
+          printError(`Failed to switch environment: ${errorMessage(error)}`);
           printInfo(`Create the file with: touch ${getEnvFilePath(environment)}`);
           process.exit(1);
         }
@@ -132,8 +137,8 @@ const program = new Command('env')
           }
           
           process.exit(1);
-        } catch (error: any) {
-          printError(`Validation failed: ${error.message}`);
+        } catch (error: unknown) {
+          printError(`Validation failed: ${errorMessage(error)}`);
           process.exit(1);
         }
       })
@@ -182,8 +187,8 @@ const program = new Command('env')
             
             console.log(table.toString());
           }
-        } catch (error: any) {
-          printError(`Comparison failed: ${error.message}`);
+        } catch (error: unknown) {
+          printError(`Comparison failed: ${errorMessage(error)}`);
           process.exit(1);
         }
       })
@@ -196,6 +201,7 @@ const program = new Command('env')
       .action(async (environment, options) => {
         const env = environment || getActiveEnv();
         
+        // SECURITY: Unmasked output is only available via explicit --raw opt-in.
         if (options.raw) {
           printWarning('⚠ Showing unmasked values including secrets!');
         }
@@ -225,8 +231,8 @@ const program = new Command('env')
           
           console.log(table.toString());
           printInfo(`\nTotal variables: ${display.length}`);
-        } catch (error: any) {
-          printError(`Failed to load environment: ${error.message}`);
+        } catch (error: unknown) {
+          printError(`Failed to load environment: ${errorMessage(error)}`);
           process.exit(1);
         }
       })

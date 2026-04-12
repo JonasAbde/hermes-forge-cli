@@ -3,7 +3,11 @@ import { execa } from 'execa';
 import open from 'open';
 import { printHeader, printInfo } from '../lib/output.js';
 import { detectWsl } from '../lib/wslDetector.js';
-import { config } from '../lib/configManager.js';
+
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
 
 const program = new Command('docs')
   .description('Start Forge Docs (VitePress) and optionally open in browser')
@@ -34,15 +38,13 @@ const program = new Command('docs')
 
     if (options.open) {
       printInfo(`Opening ${url} in browser...`);
-      
-      const openOptions: any = {};
-      if (wsl.isWsl) {
-        openOptions.app = { name: 'cmd.exe', arguments: ['/c', 'start'] };
-      }
-      
+      const openOptions: Parameters<typeof open>[1] = wsl.isWsl
+        ? { app: { name: 'cmd.exe', arguments: ['/c', 'start'] } }
+        : {};
+
       try {
         await open(url, openOptions);
-      } catch (e) {
+      } catch {
         console.warn('Could not open browser automatically. Please visit:', url);
       }
     } else {
@@ -52,9 +54,10 @@ const program = new Command('docs')
     // Keep process alive
     try {
       await docsProcess;
-    } catch (error: any) {
-      if (error.signal !== 'SIGINT') {
-        console.error('Docs server error:', error.message);
+    } catch (error: unknown) {
+      const maybeSignal = (error as { signal?: string } | undefined)?.signal;
+      if (maybeSignal !== 'SIGINT') {
+        console.error('Docs server error:', errorMessage(error));
       }
     }
   });

@@ -3,6 +3,11 @@ import { execa } from 'execa';
 import open from 'open';
 import { printHeader, printInfo } from '../lib/output.js';
 import { detectWsl } from '../lib/wslDetector.js';
+function errorMessage(error) {
+    if (error instanceof Error)
+        return error.message;
+    return String(error);
+}
 const program = new Command('docs')
     .description('Start Forge Docs (VitePress) and optionally open in browser')
     .option('--open', 'Open browser after starting (default: true)', true)
@@ -27,14 +32,13 @@ const program = new Command('docs')
     await new Promise(resolve => setTimeout(resolve, 2500));
     if (options.open) {
         printInfo(`Opening ${url} in browser...`);
-        const openOptions = {};
-        if (wsl.isWsl) {
-            openOptions.app = { name: 'cmd.exe', arguments: ['/c', 'start'] };
-        }
+        const openOptions = wsl.isWsl
+            ? { app: { name: 'cmd.exe', arguments: ['/c', 'start'] } }
+            : {};
         try {
             await open(url, openOptions);
         }
-        catch (e) {
+        catch {
             console.warn('Could not open browser automatically. Please visit:', url);
         }
     }
@@ -46,8 +50,9 @@ const program = new Command('docs')
         await docsProcess;
     }
     catch (error) {
-        if (error.signal !== 'SIGINT') {
-            console.error('Docs server error:', error.message);
+        const maybeSignal = error?.signal;
+        if (maybeSignal !== 'SIGINT') {
+            console.error('Docs server error:', errorMessage(error));
         }
     }
 });

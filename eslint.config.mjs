@@ -32,6 +32,10 @@ export default tseslint.config(
       'src/lib/lockManager.ts',
       'src/lib/healthCheck.ts',
       'src/lib/ciMode.ts',
+      'src/commands/env.ts',
+      'src/commands/config.ts',
+      'src/commands/open.ts',
+      'src/commands/docs.ts',
     ],
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',

@@ -2,6 +2,11 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import { loadEnv, getActiveEnv, setActiveEnv, listEnvironments, validateEnv, diffEnvironments, getMaskedVariables, formatEnvForDisplay, getEnvFilePath } from '../lib/envManager.js';
 import { printHeader, printSuccess, printError, printWarning, printInfo } from '../lib/output.js';
+function errorMessage(error) {
+    if (error instanceof Error)
+        return error.message;
+    return String(error);
+}
 const program = new Command('env')
     .description('Manage environment configurations')
     .addCommand(new Command('use')
@@ -34,7 +39,7 @@ const program = new Command('env')
         console.log(table.toString());
     }
     catch (error) {
-        printError(`Failed to switch environment: ${error.message}`);
+        printError(`Failed to switch environment: ${errorMessage(error)}`);
         printInfo(`Create the file with: touch ${getEnvFilePath(environment)}`);
         process.exit(1);
     }
@@ -100,7 +105,7 @@ const program = new Command('env')
         process.exit(1);
     }
     catch (error) {
-        printError(`Validation failed: ${error.message}`);
+        printError(`Validation failed: ${errorMessage(error)}`);
         process.exit(1);
     }
 }))
@@ -141,7 +146,7 @@ const program = new Command('env')
         }
     }
     catch (error) {
-        printError(`Comparison failed: ${error.message}`);
+        printError(`Comparison failed: ${errorMessage(error)}`);
         process.exit(1);
     }
 }))
@@ -151,6 +156,7 @@ const program = new Command('env')
     .option('--raw', 'show unmasked values (secrets visible)')
     .action(async (environment, options) => {
     const env = environment || getActiveEnv();
+    // SECURITY: Unmasked output is only available via explicit --raw opt-in.
     if (options.raw) {
         printWarning('⚠ Showing unmasked values including secrets!');
     }
@@ -176,7 +182,7 @@ const program = new Command('env')
         printInfo(`\nTotal variables: ${display.length}`);
     }
     catch (error) {
-        printError(`Failed to load environment: ${error.message}`);
+        printError(`Failed to load environment: ${errorMessage(error)}`);
         process.exit(1);
     }
 }));

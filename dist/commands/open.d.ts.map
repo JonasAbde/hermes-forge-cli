@@ -1,1 +1,1 @@
-{"version":3,"file":"open.d.ts","sourceRoot":"","sources":["../../src/commands/open.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,MAAM,WAAW,CAAC;AAapC,QAAA,MAAM,OAAO,SAwCT,CAAC;AAEL,eAAe,OAAO,CAAC"}
+{"version":3,"file":"open.d.ts","sourceRoot":"","sources":["../../src/commands/open.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,MAAM,WAAW,CAAC;AAkBpC,QAAA,MAAM,OAAO,SAuCT,CAAC;AAEL,eAAe,OAAO,CAAC"}

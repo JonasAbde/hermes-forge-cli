@@ -3,6 +3,11 @@ import open from 'open';
 import { printHeader, printInfo, printError } from '../lib/output.js';
 import { detectWsl } from '../lib/wslDetector.js';
 import { config } from '../lib/configManager.js';
+function errorMessage(error) {
+    if (error instanceof Error)
+        return error.message;
+    return String(error);
+}
 const TARGETS = {
     docs: { url: 'http://127.0.0.1:5190', name: 'Forge Docs' },
     hub: { url: 'http://127.0.0.1:5180/docs', name: 'Documentation Hub' },
@@ -32,16 +37,15 @@ const program = new Command('open')
         url = url.replace('5180', cfg.ports.web.toString());
     }
     printInfo(`Opening ${url}...`);
-    const openOptions = {};
-    if (wsl.isWsl) {
-        openOptions.app = { name: 'cmd.exe', arguments: ['/c', 'start'] };
-    }
+    const openOptions = wsl.isWsl
+        ? { app: { name: 'cmd.exe', arguments: ['/c', 'start'] } }
+        : {};
     try {
         await open(url, openOptions);
         printInfo('Browser opened successfully.');
     }
     catch (error) {
-        printError(`Failed to open browser: ${error.message}`);
+        printError(`Failed to open browser: ${errorMessage(error)}`);
         console.log(`Please visit manually: ${url}`);
     }
 });

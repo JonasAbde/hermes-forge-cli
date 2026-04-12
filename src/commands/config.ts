@@ -2,6 +2,18 @@ import { Command } from 'commander';
 import { config } from '../lib/configManager.js';
 import { printHeader, printInfo, printSuccess } from '../lib/output.js';
 
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
+function parseConfigValue(value: string): string | number | boolean {
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  if (!Number.isNaN(Number(value))) return Number(value);
+  return value;
+}
+
 const program = new Command('config')
   .description('Manage CLI configuration (~/.forge/config.json)')
   .addCommand(
@@ -19,18 +31,13 @@ const program = new Command('config')
       .argument('<value>', 'Value to set')
       .action((key: string, value: string) => {
         try {
-          let parsedValue: any = value;
-          
-          // Simple type coercion
-          if (value === 'true') parsedValue = true;
-          else if (value === 'false') parsedValue = false;
-          else if (!isNaN(Number(value))) parsedValue = Number(value);
-          
-          config.set(key as any, parsedValue);
+          const parsedValue = parseConfigValue(value);
+          // SECURITY: Only write values through ConfigManager to apply schema validation.
+          config.set(key as keyof ReturnType<typeof config.get>, parsedValue as never);
           printSuccess(`Set ${key} = ${parsedValue}`);
           printInfo('Configuration saved to ~/.forge/config.json');
-        } catch (error: any) {
-          console.error('Failed to set config:', error.message);
+        } catch (error: unknown) {
+          console.error('Failed to set config:', errorMessage(error));
         }
       })
   )

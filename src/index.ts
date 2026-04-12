@@ -32,6 +32,7 @@ import backupCommand from './commands/backup.js';
 import upgradeCommand from './commands/upgrade.js';
 import scheduleCommand from './commands/schedule.js';
 import notifyCommand from './commands/notify.js';
+import workspaceCommand from './commands/workspace.js';
 
 program.addCommand(statusCommand);
 program.addCommand(doctorCommand);
@@ -52,6 +53,7 @@ program.addCommand(backupCommand);
 program.addCommand(upgradeCommand);
 program.addCommand(scheduleCommand);
 program.addCommand(notifyCommand);
+program.addCommand(workspaceCommand);
 
 program.parse(process.argv);
 

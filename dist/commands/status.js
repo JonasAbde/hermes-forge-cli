@@ -33,7 +33,6 @@ const program = new Command('status')
     const wsl = detectWsl();
     // Get all locks and check validity
     const allLocks = await getAllLocks();
-    const lockMap = new Map(allLocks.map(lock => [lock.service, lock.service]));
     // Check health for all services
     const healthStatus = await checkMultipleHealth(services.map(s => s.url));
     if (options.json) {
@@ -79,7 +78,7 @@ const program = new Command('status')
         const health = healthStatus[i];
         let status;
         let statusColor;
-        let details = [];
+        const details = [];
         if (!lock) {
             // No lock file = DOWN
             status = 'DOWN';

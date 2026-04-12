@@ -16,11 +16,11 @@ export default tseslint.config(
     },
     rules: {
       'no-unused-vars': 'off',
-      'no-useless-escape': 'off',
-      'prefer-const': 'off',
+      'no-useless-escape': 'error',
+      'prefer-const': 'error',
       'preserve-caught-error': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-require-imports': 'off',
+      '@typescript-eslint/no-require-imports': 'error',
       '@typescript-eslint/no-unused-vars': 'off',
     },
   }

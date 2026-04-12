@@ -31,6 +31,6 @@ export declare const profiler: Profiler;
 export declare function formatDuration(ms: number): string;
 export declare function formatBytes(bytes: number): string;
 export declare function printProfileReport(report: ProfileReport): void;
-export declare function withProfiling(fn: (...args: any[]) => Promise<any>): (...args: any[]) => Promise<any>;
+export declare function withProfiling<TArgs extends unknown[], TResult>(fn: (...args: TArgs) => Promise<TResult>): (...args: TArgs) => Promise<TResult>;
 export {};
 //# sourceMappingURL=profiler.d.ts.map

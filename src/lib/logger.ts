@@ -6,6 +6,15 @@ import chalk from 'chalk';
 
 const LOG_DIR = join(homedir(), '.forge', 'logs');
 
+function hasErrnoCode(error: unknown, code: string): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: unknown }).code === code
+  );
+}
+
 export interface LogEntry {
   timestamp: string;
   service: string;
@@ -111,8 +120,8 @@ export async function readLogs(service: string, lines: number): Promise<LogEntry
         };
       }
     });
-  } catch (error: any) {
-    if (error.code === 'ENOENT') {
+  } catch (error: unknown) {
+    if (hasErrnoCode(error, 'ENOENT')) {
       return [];
     }
     throw error;
@@ -159,8 +168,8 @@ export async function clearLogs(service?: string): Promise<void> {
   if (service) {
     try {
       await unlink(getLogFilePath(service));
-    } catch (error: any) {
-      if (error.code !== 'ENOENT') {
+    } catch (error: unknown) {
+      if (!hasErrnoCode(error, 'ENOENT')) {
         throw error;
       }
     }

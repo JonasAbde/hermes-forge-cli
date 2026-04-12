@@ -4,6 +4,12 @@ import { join } from 'path';
 import { homedir } from 'os';
 import chalk from 'chalk';
 const LOG_DIR = join(homedir(), '.forge', 'logs');
+function hasErrnoCode(error, code) {
+    return (typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        error.code === code);
+}
 export async function ensureLogDir() {
     await mkdir(LOG_DIR, { recursive: true });
 }
@@ -83,7 +89,7 @@ export async function readLogs(service, lines) {
         });
     }
     catch (error) {
-        if (error.code === 'ENOENT') {
+        if (hasErrnoCode(error, 'ENOENT')) {
             return [];
         }
         throw error;
@@ -127,7 +133,7 @@ export async function clearLogs(service) {
             await unlink(getLogFilePath(service));
         }
         catch (error) {
-            if (error.code !== 'ENOENT') {
+            if (!hasErrnoCode(error, 'ENOENT')) {
                 throw error;
             }
         }

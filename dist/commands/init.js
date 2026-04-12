@@ -5,6 +5,11 @@ import { join } from 'path';
 import chalk from 'chalk';
 import ora from 'ora';
 import { printHeader, printSuccess, printError, printInfo, printWarning } from '../lib/output.js';
+function errorMessage(error) {
+    if (error instanceof Error)
+        return error.message;
+    return String(error);
+}
 const TEMPLATES = {
     pack: {
         name: 'Agent Pack',
@@ -62,7 +67,7 @@ const TEMPLATES = {
         description: 'Custom MCP tool for the registry',
         files: {
             'tool.py': (name) => `#!/usr/bin/env python3
-\"\"\"\nMCP Tool: ${name}\n\"\"\"\n
+"""\nMCP Tool: ${name}\n"""\n
 from mcp.types import Tool, TextContent
 
 TOOL_DEFINITION = Tool(
@@ -81,7 +86,7 @@ TOOL_DEFINITION = Tool(
 )
 
 async def execute(param1: str) -> list[TextContent]:
-    \"\"\"Execute the tool.\"\"\"\n    result = f"Processed: {param1}"\n    return [TextContent(type="text", text=result)]
+    """Execute the tool."""\n    result = f"Processed: {param1}"\n    return [TextContent(type="text", text=result)]
 `,
             'README.md': (name) => `# ${name} MCP Tool\n\nCustom MCP tool for the Forge registry.\n\n## Installation\n\nAdd to your MCP registry configuration.\n\n## Usage\n\n\`\`\`python\nfrom ${name} import TOOL_DEFINITION, execute\n\nresult = await execute(param1="value")\n\`\`\`\n`
         }
@@ -167,7 +172,7 @@ const program = new Command('init')
     }
     catch (error) {
         spinner.fail('Failed to create project');
-        printError(error.message);
+        printError(errorMessage(error));
         process.exit(1);
     }
 });

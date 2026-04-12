@@ -41,7 +41,6 @@ const program = new Command('status')
 
     // Get all locks and check validity
     const allLocks = await getAllLocks();
-    const lockMap = new Map(allLocks.map(lock => [lock.service, lock.service]));
 
     // Check health for all services
     const healthStatus = await checkMultipleHealth(services.map(s => s.url));
@@ -93,7 +92,7 @@ const program = new Command('status')
       
       let status: 'UP' | 'CRASHED' | 'DOWN';
       let statusColor: (text: string) => string;
-      let details: string[] = [];
+      const details: string[] = [];
 
       if (!lock) {
         // No lock file = DOWN

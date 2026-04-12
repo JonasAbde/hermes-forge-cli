@@ -10,6 +10,7 @@ const program = new Command('dev')
     .option('--with-docs', 'Start with Forge Docs (default for most workflows)')
     .option('--only-api', 'Start only the API')
     .option('--only-web', 'Start only the web app')
+    .option('--forge-api-proxy', 'With --only-web: keep FORGE_API_PROXY (proxies /api to 5181). Default: force embedded catalog in Vite.')
     .option('--only-docs', 'Start only Forge Docs')
     .option('--port-offset <number>', 'Add offset to all ports (for conflict resolution)', '0')
     .option('--force', 'Force start even if services are already running (releases existing locks)')
@@ -67,6 +68,9 @@ const program = new Command('dev')
     printInfo(description);
     if (offset > 0)
         printInfo(`Port offset applied: +${offset}`);
+    if (options.onlyWeb && !options.forgeApiProxy) {
+        printInfo('Embedded catalog: FORGE_FORCE_EMBEDDED_CATALOG=1 (use --forge-api-proxy to proxy /api to port 5181 instead).');
+    }
     let childProcess = null;
     let lockAcquired = false;
     // Set up signal handlers for graceful shutdown
@@ -90,15 +94,18 @@ const program = new Command('dev')
             logger = createLogger(serviceName);
             printInfo(`Logging to file enabled: ~/.forge/logs/${serviceName}.log`);
         }
+        // Web-only: force embedded catalog unless --forge-api-proxy (avoids empty UI when FORGE_API_PROXY=1 but API is down)
+        const childEnv = { ...process.env, FORCE_COLOR: 'true' };
+        if (options.onlyWeb && !options.forgeApiProxy) {
+            childEnv.FORGE_FORCE_EMBEDDED_CATALOG = '1';
+            delete childEnv.FORGE_API_PROXY;
+        }
         // Start the child process
         childProcess = execa(command, {
             cwd: process.cwd(),
             stdio: options.logToFile ? ['inherit', 'pipe', 'pipe'] : 'inherit',
             shell: true,
-            env: {
-                ...process.env,
-                FORCE_COLOR: 'true'
-            }
+            env: childEnv
         });
         // Set up log piping if enabled
         if (options.logToFile && logger && childProcess.stdout && childProcess.stderr) {

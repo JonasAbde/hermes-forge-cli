@@ -33,6 +33,7 @@ import upgradeCommand from './commands/upgrade.js';
 import scheduleCommand from './commands/schedule.js';
 import notifyCommand from './commands/notify.js';
 import workspaceCommand from './commands/workspace.js';
+import interactiveCommand from './commands/interactive.js';
 
 program.addCommand(statusCommand);
 program.addCommand(doctorCommand);

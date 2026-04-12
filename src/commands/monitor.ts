@@ -109,7 +109,7 @@ async function getAllServiceStatus(): Promise<ServiceStatus[]> {
     { key: 'web', name: 'Web (Vite)', port: cfg.ports.web, url: `http://127.0.0.1:${cfg.ports.web}`, state: 'down', restartCount: 0 },
     { key: 'api', name: 'API', port: cfg.ports.api, url: `http://127.0.0.1:${cfg.ports.api}/health`, state: 'down', restartCount: 0 },
     { key: 'docs', name: 'Docs (VitePress)', port: cfg.ports.docs, url: `http://127.0.0.1:${cfg.ports.docs}`, state: 'down', restartCount: 0 },
-    { key: 'mcp', name: 'MCP Registry', port: cfg.ports.mcp, url: `http://127.0.0.1:${cfg.ports.mcp}`, state: 'down', restartCount: 0 }
+    { key: 'mcp', name: 'MCP Registry', port: cfg.ports.mcp, url: `http://127.0.0.1:${cfg.ports.mcp}/health`, state: 'down', restartCount: 0 }
   ];
   
   // Get locks

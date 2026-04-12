@@ -29,6 +29,10 @@ _forge_completions() {
       local opts="--with-docs --only-api --only-web --only-docs --port-offset --force --help"
       COMPREPLY=( $(compgen -W "\${opts}" -- \${cur}) )
       ;;
+    doctor)
+      local opts="--strict --json --quick --deep --help"
+      COMPREPLY=( $(compgen -W "\${opts}" -- \${cur}) )
+      ;;
     pack)
       local pack_commands="list validate build metadata"
       COMPREPLY=( $(compgen -W "\${pack_commands}" -- \${cur}) )
@@ -157,6 +161,13 @@ _forge() {
     env)
       _forge_env
       ;;
+    doctor)
+      _arguments \
+        '--strict[Exit with code 1 on any warning]' \
+        '--json[Output as JSON]' \
+        '--quick[Skip heavy HTTP checks]' \
+        '--deep[Run smoke-test, smoke-auth, optional smoke-http]'
+      ;;
     *)
       _files
       ;;
@@ -211,6 +222,12 @@ complete -c forge -n '__fish_seen_subcommand_from dev' -l 'only-web' -d 'Web onl
 complete -c forge -n '__fish_seen_subcommand_from dev' -l 'only-docs' -d 'Docs only'
 complete -c forge -n '__fish_seen_subcommand_from dev' -l 'port-offset' -r -d 'Port offset'
 complete -c forge -n '__fish_seen_subcommand_from dev' -l 'force' -d 'Force restart'
+
+# Doctor options
+complete -c forge -n '__fish_seen_subcommand_from doctor' -l 'strict' -d 'Exit 1 on warnings'
+complete -c forge -n '__fish_seen_subcommand_from doctor' -l 'json' -d 'JSON output'
+complete -c forge -n '__fish_seen_subcommand_from doctor' -l 'quick' -d 'Skip heavy checks'
+complete -c forge -n '__fish_seen_subcommand_from doctor' -l 'deep' -d 'Run smoke tests'
 
 # Global options
 complete -c forge -l 'verbose' -d 'Enable verbose output'

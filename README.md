@@ -31,8 +31,8 @@ forge mcp start
 ## Core Commands
 
 - `forge status [--watch] [--json]` — Overview of all services
-- `forge doctor [--strict]` — Comprehensive system diagnostics
-- `forge dev [--with-docs] [--only-web] [--only-api] [--only-docs]` — Start development services
+- `forge doctor [--strict] [--quick] [--deep] [--json]` — Diagnostics (`--deep` runs `smoke-test` + `smoke-auth`, optional `smoke-http` when API is up; use `FORGE_REPO_ROOT` if not run from repo root)
+- `forge dev [--with-docs] [--only-web] [--only-api] [--only-docs] [--forge-api-proxy]` — Start development services (`--only-web` forces embedded catalog unless `--forge-api-proxy`)
 - `forge docs [--open]` — Start Forge Docs (VitePress)
 - `forge open <target>` — Open docs, hub, showcase, or API in browser
 - `forge pack ...` — Pack management (list, validate, build)

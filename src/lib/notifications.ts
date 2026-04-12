@@ -189,7 +189,7 @@ async function sendSlackNotification(
     }]
   });
   
-  const response = await fetch(config.slack.webhookUrl, {
+  const response = await fetch(config.webhookUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body
@@ -222,7 +222,7 @@ async function sendDiscordNotification(
     }]
   });
   
-  const response = await fetch(config.discord.webhookUrl, {
+  const response = await fetch(config.webhookUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body

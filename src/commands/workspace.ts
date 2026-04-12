@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import ora from 'ora';
+import { homedir } from 'os';
 import { 
   loadWorkspaces, 
   addWorkspace, 

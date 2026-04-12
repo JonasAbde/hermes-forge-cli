@@ -63,6 +63,14 @@ forge config get
 
 ## Development
 
+Fra **repo-roden** (samme som CI `forge-cli-check`):
+
+```bash
+npm run test:cli
+```
+
+Eller inde i `cli/`:
+
 ```bash
 cd cli
 npm run dev     # Watch build

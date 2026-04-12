@@ -55,6 +55,7 @@ program.addCommand(upgradeCommand);
 program.addCommand(scheduleCommand);
 program.addCommand(notifyCommand);
 program.addCommand(workspaceCommand);
+program.addCommand(interactiveCommand);
 
 program.parse(process.argv);
 

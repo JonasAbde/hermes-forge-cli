@@ -1,0 +1,35 @@
+export declare function getMcpRegistryPath(): string;
+export declare function getMcpDefaultPort(): number;
+export declare function getMcpBaseUrl(port?: number): string;
+export declare function getMcpPythonRuntime(): string;
+export declare function isMcpRegistryInstalled(): Promise<boolean>;
+export declare function isMcpRunning(port?: number): Promise<boolean>;
+export interface McpStartResult {
+    pid: number;
+    port: number;
+    url: string;
+}
+export declare function startMcpRegistry(port?: number): Promise<McpStartResult>;
+export declare function stopMcpRegistry(): Promise<boolean>;
+export declare function checkMcpHealth(port?: number): Promise<{
+    ok: boolean;
+    responseTime: number;
+    error?: string;
+}>;
+export declare function listMcpTools(port?: number): Promise<string[]>;
+export interface McpTestResult {
+    success: boolean;
+    result?: any;
+    error?: string;
+    duration: number;
+}
+export declare function testMcpTool(toolName: string, params?: object, port?: number): Promise<McpTestResult>;
+export declare function getMcpStatus(port?: number): Promise<{
+    running: boolean;
+    pid?: number;
+    port: number;
+    url: string;
+    uptime?: number;
+    tools: string[];
+} | null>;
+//# sourceMappingURL=mcpManager.d.ts.map

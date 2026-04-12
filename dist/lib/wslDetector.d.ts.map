@@ -1,0 +1,1 @@
+{"version":3,"file":"wslDetector.d.ts","sourceRoot":"","sources":["../../src/lib/wslDetector.ts"],"names":[],"mappings":"AAEA,MAAM,WAAW,OAAO;IACtB,KAAK,EAAE,OAAO,CAAC;IACf,MAAM,EAAE,OAAO,CAAC;IAChB,MAAM,EAAE,MAAM,GAAG,IAAI,CAAC;IACtB,WAAW,EAAE,CAAC,GAAG,EAAE,MAAM,KAAK,MAAM,EAAE,CAAC;CACxC;AAED,wBAAgB,SAAS,IAAI,OAAO,CAiCnC"}

@@ -125,7 +125,7 @@ async function sendSlackNotification(payload, config) {
                 ts: Math.floor(Date.now() / 1000)
             }]
     });
-    const response = await fetch(config.slack.webhookUrl, {
+    const response = await fetch(config.webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body
@@ -151,7 +151,7 @@ async function sendDiscordNotification(payload, config) {
                 footer: { text: 'Forge CLI' }
             }]
     });
-    const response = await fetch(config.discord.webhookUrl, {
+    const response = await fetch(config.webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body

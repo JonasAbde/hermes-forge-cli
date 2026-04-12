@@ -289,12 +289,19 @@ setInterval(tick, 60000);
 console.log('Forge Scheduler Daemon started');
 `;
     await writeFile(join(SCHEDULER_DIR, 'daemon.js'), daemonScript);
-    // Start the daemon
+    // Write daemon info file
+    const daemonInfo = {
+        pid: process.pid,
+        startedAt: new Date().toISOString(),
+        logFile
+    };
+    await writeFile(join(SCHEDULER_DIR, 'daemon.json'), JSON.stringify(daemonInfo, null, 2));
+    // Start the daemon detached
     const proc = await execa('node', [join(SCHEDULER_DIR, 'daemon.js')], {
         detached: true,
         stdio: ['ignore', 'pipe', 'pipe']
     });
-    return { pid: proc.pid, logFile };
+    return { pid: process.pid, logFile };
 }
 // Validate cron expression
 export function validateCronExpression(expr) {

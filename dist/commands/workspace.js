@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import ora from 'ora';
+import { homedir } from 'os';
 import { loadWorkspaces, addWorkspace, removeWorkspace, getWorkspace, setDefaultWorkspace, detectWorkspaces, importCurrentDirectory, switchToWorkspace, getWorkspaceStats } from '../lib/workspaceManager.js';
 import { printHeader, printSuccess, printError, printInfo, printWarning } from '../lib/output.js';
 const program = new Command('workspace')
@@ -233,13 +234,8 @@ const program = new Command('workspace')
         printInfo(`Path: ${chalk.gray(workspace.path)}`);
     }
     catch (error) {
-        if (error.message.includes('already exists')) {
-            printWarning(error.message);
-        }
-        else {
-            printError(error.message);
-            process.exit(1);
-        }
+        printError(error.message);
+        process.exit(1);
     }
 }));
 export default program;

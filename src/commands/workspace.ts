@@ -295,15 +295,15 @@ const program = new Command('workspace')
         
         try {
           const workspace = await importCurrentDirectory();
+          if (!workspace) {
+            printWarning('Current directory is already a workspace');
+            return;
+          }
           printSuccess(`Workspace imported: ${chalk.yellow(workspace.name)}`);
           printInfo(`Path: ${chalk.gray(workspace.path)}`);
         } catch (error: any) {
-          if (error.message.includes('already exists')) {
-            printWarning(error.message);
-          } else {
-            printError(error.message);
-            process.exit(1);
-          }
+          printError(error.message);
+          process.exit(1);
         }
       })
   );

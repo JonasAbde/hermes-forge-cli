@@ -1,3 +1,4 @@
+import { closeSync, existsSync, mkdirSync, openSync, watch } from 'fs';
 import { appendFile, mkdir, readFile, stat, unlink, rename, readdir } from 'fs/promises';
 import { join } from 'path';
 import { homedir } from 'os';
@@ -89,8 +90,14 @@ export async function readLogs(service, lines) {
     }
 }
 export function tailLogs(service, callback) {
-    const { watch } = require('fs');
     const logPath = getLogFilePath(service);
+    // SECURITY: Watch only the service-scoped file under ~/.forge/logs.
+    // Ensure the watched path exists to avoid ENOENT crashes in follow mode.
+    mkdirSync(LOG_DIR, { recursive: true });
+    if (!existsSync(logPath)) {
+        const fd = openSync(logPath, 'a');
+        closeSync(fd);
+    }
     // Start watching
     const watcher = watch(logPath, (eventType) => {
         if (eventType === 'change') {

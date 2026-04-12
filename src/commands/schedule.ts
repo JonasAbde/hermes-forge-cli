@@ -260,12 +260,15 @@ const program = new Command('schedule')
           printInfo('No logs found');
           return;
         }
+
+        // Cache tasks for quick lookup
+        const tasks = await loadTasks();
+        const taskMap = new Map(tasks.map(t => [t.id, t]));
         
         for (const log of logs) {
           console.log(chalk.bold.cyan(`\n[${log.date.toLocaleString()}]`));
           if (log.taskId) {
-            const tasks = await loadTasks();
-            const task = tasks.find(t => t.id === log.taskId);
+            const task = taskMap.get(log.taskId);
             console.log(chalk.gray(`Task: ${task?.name || log.taskId}`));
           }
           console.log(chalk.gray('─'.repeat(60)));

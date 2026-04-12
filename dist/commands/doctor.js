@@ -9,6 +9,30 @@ import { execa } from 'execa';
 import { ExitCodes, isCiMode, createCiResponse } from '../lib/ciMode.js';
 import { checkHealth, checkForgeApiHealth, checkForgeApiReady } from '../lib/healthCheck.js';
 import { resolveRepoRoot, catalogJsonPathForRoot } from '../lib/repoPaths.js';
+/**
+ * When a dev server is up on a port, "port in use" is expected — suppress that
+ * warning if the corresponding HTTP check succeeded (avoids noisy `doctor --strict`).
+ */
+function shouldSuppressPortInUseWarning(portIndex, servicesHttp) {
+    const keys = ['web', 'api', 'docs', 'mcp'];
+    const key = keys[portIndex];
+    const raw = servicesHttp[key];
+    if (!raw || typeof raw !== 'object')
+        return false;
+    const svc = raw;
+    if (svc.skipped)
+        return false;
+    if (key === 'api') {
+        const health = svc.health;
+        const ready = svc.ready;
+        if (health?.bodyOk && ready?.bodyOk)
+            return true;
+        if (health?.bodyOk && ready?.staleReady404)
+            return true;
+        return false;
+    }
+    return svc.status === 'up';
+}
 const program = new Command('doctor')
     .description('Run comprehensive system diagnostics')
     .option('--strict', 'exit with code 1 on any warning')
@@ -58,7 +82,6 @@ const program = new Command('doctor')
         if (p.isInUse) {
             if (!jsonOutput)
                 printWarning(`Port ${p.port} (${names[i]}) in use by PID ${p.pid}`);
-            warnings.push(`Port ${p.port} (${names[i]}) in use`);
         }
         else {
             if (!jsonOutput)
@@ -251,7 +274,15 @@ const program = new Command('doctor')
             if (def.kind === 'forgeApi') {
                 const health = await checkForgeApiHealth(def.url);
                 const ready = await checkForgeApiReady(def.url);
-                servicesHttp[def.key] = { health, ready };
+                const staleReady404 = !!(health.bodyOk && !ready.bodyOk && ready.httpStatus === 404);
+                const readyPayload = staleReady404
+                    ? {
+                        ...ready,
+                        staleReady404: true,
+                        note: 'GET /ready returned HTTP 404 while /health is OK — this process likely predates the /ready route; restart with `npm run dev:api`.',
+                    }
+                    : ready;
+                servicesHttp[def.key] = { health, ready: readyPayload };
                 if (!health.bodyOk) {
                     const detail = health.message || 'forge_db or catalog not ok';
                     if (health.status === 'error') {
@@ -261,7 +292,7 @@ const program = new Command('doctor')
                         warnings.push(`API /health degraded: ${detail}`);
                     }
                 }
-                if (!ready.bodyOk) {
+                if (!ready.bodyOk && !staleReady404) {
                     const detail = ready.message || 'readiness check failed';
                     if (ready.status === 'error') {
                         warnings.push(`API /ready: ${detail}`);
@@ -279,6 +310,9 @@ const program = new Command('doctor')
                     }
                     if (ready.bodyOk) {
                         printSuccess(`${def.name}: /ready OK (sqlite_query=${ready.checks?.sqlite_query}, catalog=${ready.checks?.catalog})`);
+                    }
+                    else if (staleReady404) {
+                        printInfo(`${def.name}: /ready is missing (HTTP 404) while /health is OK — restart API to pick up GET /ready.`);
                     }
                     else {
                         printWarning(`${def.name} /ready: ${ready.message || 'not ready'}`);
@@ -305,6 +339,14 @@ const program = new Command('doctor')
     else {
         servicesHttp.note = 'skipped (--quick)';
     }
+    const portServiceLabels = ['Web', 'API', 'Docs', 'MCP'];
+    portResults.forEach((p, i) => {
+        if (!p.isInUse)
+            return;
+        if (shouldSuppressPortInUseWarning(i, servicesHttp))
+            return;
+        warnings.push(`Port ${p.port} (${portServiceLabels[i]}) in use`);
+    });
     if (!options.quick && proxyOn && allowOn) {
         const apiPortFree = !portResults[1]?.isInUse;
         const apiSvc = servicesHttp.api;
@@ -312,8 +354,9 @@ const program = new Command('doctor')
         if (!apiUnhealthy && apiSvc && !apiSvc.skipped) {
             const h = apiSvc.health?.bodyOk;
             const r = apiSvc.ready?.bodyOk;
+            const stale = apiSvc.ready?.staleReady404;
             if (h !== undefined && r !== undefined) {
-                apiUnhealthy = h === false || r === false;
+                apiUnhealthy = stale ? false : h === false || r === false;
             }
         }
         if (apiUnhealthy) {

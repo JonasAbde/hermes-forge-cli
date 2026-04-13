@@ -135,7 +135,7 @@ async function saveTasks(tasks: ScheduledTask[]): Promise<void> {
 
 // Generate unique ID
 function generateId(): string {
-  return `task_${randomUUID()}`;
+  return `task_${Date.now()}_${randomUUID()}`;
 }
 
 // Add a new task

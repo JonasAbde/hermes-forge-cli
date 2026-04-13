@@ -5,6 +5,13 @@ import { homedir } from 'os';
 import chalk from 'chalk';
 import { printHeader, printSuccess, printInfo, printWarning, printError } from '../lib/output.js';
 
+// Declare shell variables that are provided at runtime
+declare const COMP_WORDS: string[];
+declare const COMP_CWORD: number;
+declare const COMPREPLY: string[];
+declare let cur: string;
+declare let prev: string;
+
 const BASH_COMPLETION = `
 # Forge CLI Bash Completion
 # Quick setup: source <(forge completion bash)
@@ -13,77 +20,75 @@ const BASH_COMPLETION = `
 _forge_completions() {
   local cur prev
   COMPREPLY=()
-  cur="${COMP_WORDS[COMP_CWORD]}"
+  cur="\${COMP_WORDS[COMP_CWORD]}"
 
   # Full list of top-level commands
   local commands="status doctor dev docs open pack mcp config env logs monitor init plugin completion alias backup upgrade schedule notify workspace interactive help"
 
   if [ $COMP_CWORD -eq 1 ]; then
-    COMPREPLY=( $(compgen -W "${commands}" -- ${cur}) )
+    COMPREPLY=( \$(compgen -W "\${commands}" -- \${cur}) )
     return 0
   fi
 
-  case "${COMP_WORDS[1]}" in
+  case "\${COMP_WORDS[1]}" in
     status)
-      COMPREPLY=( $(compgen -W "--watch --json --clear-locks --help" -- ${cur}) ) ;;
+      COMPREPLY=( \$(compgen -W "--watch --json --clear-locks --help" -- \${cur}) ) ;;
     dev)
-      COMPREPLY=( $(compgen -W "--with-docs --only-api --only-web --only-docs --forge-api-proxy --port-offset --force --log-to-file --help" -- ${cur}) ) ;;
+      COMPREPLY=( \$(compgen -W "--with-docs --only-api --only-web --only-docs --forge-api-proxy --port-offset --force --log-to-file --help" -- \${cur}) ) ;;
     doctor)
-      COMPREPLY=( $(compgen -W "--strict --json --quick --deep --help" -- ${cur}) ) ;;
+      COMPREPLY=( \$(compgen -W "--strict --json --quick --deep --help" -- \${cur}) ) ;;
     docs)
-      COMPREPLY=( $(compgen -W "--port --no-open --help" -- ${cur}) ) ;;
+      COMPREPLY=( \$(compgen -W "--port --no-open --help" -- \${cur}) ) ;;
     open)
-      COMPREPLY=( $(compgen -W "docs hub showcase catalog chat api" -- ${cur}) ) ;;
+      COMPREPLY=( \$(compgen -W "docs hub showcase catalog chat api" -- \${cur}) ) ;;
     pack)
       local pack_cmds="list validate build metadata"
       if [ $COMP_CWORD -eq 2 ]; then
-        COMPREPLY=( $(compgen -W "${pack_cmds}" -- ${cur}) )
+        COMPREPLY=( \$(compgen -W "\${pack_cmds}" -- \${cur}) )
       else
-        case "${COMP_WORDS[2]}" in
-          list)     COMPREPLY=( $(compgen -W "--catalog --theme --json" -- ${cur}) ) ;;
-          validate) COMPREPLY=( $(compgen -W "--strict" -- ${cur}) ) ;;
-          build)    COMPREPLY=( $(compgen -W "--watch --out" -- ${cur}) ) ;;
-          metadata) COMPREPLY=( $(compgen -W "--catalog --out --format" -- ${cur}) ) ;;
+        case "\${COMP_WORDS[2]}" in
+          list)     COMPREPLY=( \$(compgen -W "--catalog --theme --json" -- \${cur}) ) ;;
+          validate) COMPREPLY=( \$(compgen -W "--strict" -- \${cur}) ) ;;
+          build)    COMPREPLY=( \$(compgen -W "--watch --out" -- \${cur}) ) ;;
+          metadata) COMPREPLY=( \$(compgen -W "--catalog --out --format" -- \${cur}) ) ;;
         esac
       fi ;;
     mcp)
       local mcp_cmds="start stop status test tools"
       if [ $COMP_CWORD -eq 2 ]; then
-        COMPREPLY=( $(compgen -W "${mcp_cmds}" -- ${cur}) )
+        COMPREPLY=( \$(compgen -W "\${mcp_cmds}" -- \${cur}) )
       fi ;;
     config)
-      COMPREPLY=( $(compgen -W "get set reset --json --help" -- ${cur}) ) ;;
+      COMPREPLY=( \$(compgen -W "get set reset --json --help" -- \${cur}) ) ;;
     env)
-      COMPREPLY=( $(compgen -W "use list validate diff show" -- ${cur}) ) ;;
+      COMPREPLY=( \$(compgen -W "use list validate diff show" -- \${cur}) ) ;;
     logs)
-      COMPREPLY=( $(compgen -W "--follow --lines --level --list --clear --help" -- ${cur}) ) ;;
+      COMPREPLY=( \$(compgen -W "--follow --lines --level --list --clear --help" -- \${cur}) ) ;;
     alias)
       local alias_cmds="list set remove show run init"
       if [ $COMP_CWORD -eq 2 ]; then
-        COMPREPLY=( $(compgen -W "${alias_cmds}" -- ${cur}) )
+        COMPREPLY=( \$(compgen -W "\${alias_cmds}" -- \${cur}) )
       fi ;;
     backup)
-      COMPREPLY=( $(compgen -W "create restore list delete auto --help" -- ${cur}) ) ;;
+      COMPREPLY=( \$(compgen -W "create restore list delete auto --help" -- \${cur}) ) ;;
     schedule)
-      COMPREPLY=( $(compgen -W "add list remove run logs search --help" -- ${cur}) ) ;;
+      COMPREPLY=( \$(compgen -W "add list remove run logs search --help" -- \${cur}) ) ;;
     notify)
-      COMPREPLY=( $(compgen -W "send config setup test --help" -- ${cur}) ) ;;
+      COMPREPLY=( \$(compgen -W "send config setup test --help" -- \${cur}) ) ;;
     workspace)
-      COMPREPLY=( $(compgen -W "list create switch info detect init --help" -- ${cur}) ) ;;
+      COMPREPLY=( \$(compgen -W "list create switch info detect init --help" -- \${cur}) ) ;;
     upgrade)
-      COMPREPLY=( $(compgen -W "--check --force --help" -- ${cur}) ) ;;
+      COMPREPLY=( \$(compgen -W "--check --force --help" -- \${cur}) ) ;;
     plugin)
-      COMPREPLY=( $(compgen -W "list search install uninstall update validate exec create" -- ${cur}) ) ;;
+      COMPREPLY=( \$(compgen -W "list search install uninstall update validate exec create" -- \${cur}) ) ;;
     init)
-      COMPREPLY=( $(compgen -W "pack web-extension mcp-tool templates --help" -- ${cur}) ) ;;
+      COMPREPLY=( \$(compgen -W "pack web-extension mcp-tool templates --help" -- \${cur}) ) ;;
     completion)
-      COMPREPLY=( $(compgen -W "bash zsh fish" -- ${cur}) ) ;;
+      COMPREPLY=( \$(compgen -W "bash zsh fish" -- \${cur}) ) ;;
     *)
       COMPREPLY=() ;;
   esac
 }
-
-complete -F _forge_completions forge
 `;
 
 const ZSH_COMPLETION = `
@@ -109,7 +114,7 @@ _forge_commands() {
     'monitor:Real-time monitoring dashboard'
     'init:Initialize a new project'
     'plugin:Manage Forge CLI plugins'
-    'completion:Generate shell completions'
+    'completion:Generate shell completion scripts'
     'alias:Manage command aliases'
     'backup:Backup and restore data'
     'upgrade:Upgrade Forge CLI'
@@ -192,17 +197,17 @@ _forge_open() {
 }
 
 _forge() {
-  local curcontext="\$curcontext" state line
+  local curcontext="$curcontext" state line
   typeset -A opt_args
 
-  _arguments -C \\
-    '(-h --help)'{-h,--help}'[Show help]' \\
-    '(-V --version)'{-V,--version}'[Show version]' \\
-    '--verbose[Enable verbose output]' \\
-    '1: :_forge_commands' \\
+  _arguments -C \
+    '(-h --help)'{-h,--help}'[Show help]' \
+    '(-V --version)'{-V,--version}'[Show version]' \
+    '--verbose[Enable verbose output]' \
+    '1: :_forge_commands' \
     '*::arg:->args'
 
-  case \$line[1] in
+  case $line[1] in
     pack)      _forge_pack ;;
     mcp)       _forge_mcp ;;
     plugin)    _forge_plugin ;;
@@ -210,27 +215,27 @@ _forge() {
     alias)     _forge_alias ;;
     open)      _forge_open ;;
     dev)
-      _arguments \\
-        '--with-docs[Start with documentation server]' \\
-        '--only-api[Start only the API]' \\
-        '--only-web[Start only the web app]' \\
-        '--only-docs[Start only Forge Docs]' \\
-        '--forge-api-proxy[Use API proxy instead of embedded catalog]' \\
-        '--port-offset[Add offset to all ports]:offset:(0 1000 2000)' \\
-        '--force[Force start even if services are already running]' \\
+      _arguments \
+        '--with-docs[Start with documentation server]' \
+        '--only-api[Start only the API]' \
+        '--only-web[Start only the web app]' \
+        '--only-docs[Start only Forge Docs]' \
+        '--forge-api-proxy[Use API proxy instead of embedded catalog]' \
+        '--port-offset[Add offset to all ports]:offset:(0 1000 2000)' \
+        '--force[Force start even if services are already running]' \
         '--log-to-file[Redirect output to log file]'
       ;;
     doctor)
-      _arguments \\
-        '--strict[Exit with code 1 on any warning]' \\
-        '--json[Output as JSON]' \\
-        '--quick[Skip heavy HTTP checks]' \\
+      _arguments \
+        '--strict[Exit with code 1 on any warning]' \
+        '--json[Output as JSON]' \
+        '--quick[Skip heavy HTTP checks]' \
         '--deep[Run smoke tests]'
       ;;
     status)
-      _arguments \\
-        '--watch[Watch mode, refresh every 5 seconds]' \\
-        '--json[Output as JSON]' \\
+      _arguments \
+        '--watch[Watch mode, refresh every 5 seconds]' \
+        '--json[Output as JSON]' \
         '--clear-locks[Clear stale lock files]'
       ;;
     *)

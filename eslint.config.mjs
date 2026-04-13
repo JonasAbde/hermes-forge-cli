@@ -40,5 +40,12 @@ export default tseslint.config(
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
     },
+  },
+  // Override for completion.ts which contains shell scripts with escaped $ signs
+  {
+    files: ['src/commands/completion.ts'],
+    rules: {
+      'no-useless-escape': 'off',
+    },
   }
 );

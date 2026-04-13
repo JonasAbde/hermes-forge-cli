@@ -13,71 +13,71 @@ const BASH_COMPLETION = `
 _forge_completions() {
   local cur prev
   COMPREPLY=()
-  cur="\${COMP_WORDS[COMP_CWORD]}"
+  cur="${COMP_WORDS[COMP_CWORD]}"
 
   # Full list of top-level commands
   local commands="status doctor dev docs open pack mcp config env logs monitor init plugin completion alias backup upgrade schedule notify workspace interactive help"
 
-  if [ \$COMP_CWORD -eq 1 ]; then
-    COMPREPLY=( \$(compgen -W "\${commands}" -- \${cur}) )
+  if [ $COMP_CWORD -eq 1 ]; then
+    COMPREPLY=( $(compgen -W "${commands}" -- ${cur}) )
     return 0
   fi
 
-  case "\${COMP_WORDS[1]}" in
+  case "${COMP_WORDS[1]}" in
     status)
-      COMPREPLY=( \$(compgen -W "--watch --json --clear-locks --help" -- \${cur}) ) ;;
+      COMPREPLY=( $(compgen -W "--watch --json --clear-locks --help" -- ${cur}) ) ;;
     dev)
-      COMPREPLY=( \$(compgen -W "--with-docs --only-api --only-web --only-docs --forge-api-proxy --port-offset --force --log-to-file --help" -- \${cur}) ) ;;
+      COMPREPLY=( $(compgen -W "--with-docs --only-api --only-web --only-docs --forge-api-proxy --port-offset --force --log-to-file --help" -- ${cur}) ) ;;
     doctor)
-      COMPREPLY=( \$(compgen -W "--strict --json --quick --deep --help" -- \${cur}) ) ;;
+      COMPREPLY=( $(compgen -W "--strict --json --quick --deep --help" -- ${cur}) ) ;;
     docs)
-      COMPREPLY=( \$(compgen -W "--port --no-open --help" -- \${cur}) ) ;;
+      COMPREPLY=( $(compgen -W "--port --no-open --help" -- ${cur}) ) ;;
     open)
-      COMPREPLY=( \$(compgen -W "docs hub showcase catalog chat api" -- \${cur}) ) ;;
+      COMPREPLY=( $(compgen -W "docs hub showcase catalog chat api" -- ${cur}) ) ;;
     pack)
       local pack_cmds="list validate build metadata"
-      if [ \$COMP_CWORD -eq 2 ]; then
-        COMPREPLY=( \$(compgen -W "\${pack_cmds}" -- \${cur}) )
+      if [ $COMP_CWORD -eq 2 ]; then
+        COMPREPLY=( $(compgen -W "${pack_cmds}" -- ${cur}) )
       else
-        case "\${COMP_WORDS[2]}" in
-          list)     COMPREPLY=( \$(compgen -W "--catalog --theme --json" -- \${cur}) ) ;;
-          validate) COMPREPLY=( \$(compgen -W "--strict" -- \${cur}) ) ;;
-          build)    COMPREPLY=( \$(compgen -W "--watch --out" -- \${cur}) ) ;;
-          metadata) COMPREPLY=( \$(compgen -W "--catalog --out --format" -- \${cur}) ) ;;
+        case "${COMP_WORDS[2]}" in
+          list)     COMPREPLY=( $(compgen -W "--catalog --theme --json" -- ${cur}) ) ;;
+          validate) COMPREPLY=( $(compgen -W "--strict" -- ${cur}) ) ;;
+          build)    COMPREPLY=( $(compgen -W "--watch --out" -- ${cur}) ) ;;
+          metadata) COMPREPLY=( $(compgen -W "--catalog --out --format" -- ${cur}) ) ;;
         esac
       fi ;;
     mcp)
       local mcp_cmds="start stop status test tools"
-      if [ \$COMP_CWORD -eq 2 ]; then
-        COMPREPLY=( \$(compgen -W "\${mcp_cmds}" -- \${cur}) )
+      if [ $COMP_CWORD -eq 2 ]; then
+        COMPREPLY=( $(compgen -W "${mcp_cmds}" -- ${cur}) )
       fi ;;
     config)
-      COMPREPLY=( \$(compgen -W "get set reset --json --help" -- \${cur}) ) ;;
+      COMPREPLY=( $(compgen -W "get set reset --json --help" -- ${cur}) ) ;;
     env)
-      COMPREPLY=( \$(compgen -W "use list validate diff show" -- \${cur}) ) ;;
+      COMPREPLY=( $(compgen -W "use list validate diff show" -- ${cur}) ) ;;
     logs)
-      COMPREPLY=( \$(compgen -W "--follow --lines --level --list --clear --help" -- \${cur}) ) ;;
+      COMPREPLY=( $(compgen -W "--follow --lines --level --list --clear --help" -- ${cur}) ) ;;
     alias)
       local alias_cmds="list set remove show run init"
-      if [ \$COMP_CWORD -eq 2 ]; then
-        COMPREPLY=( \$(compgen -W "\${alias_cmds}" -- \${cur}) )
+      if [ $COMP_CWORD -eq 2 ]; then
+        COMPREPLY=( $(compgen -W "${alias_cmds}" -- ${cur}) )
       fi ;;
     backup)
-      COMPREPLY=( \$(compgen -W "create restore list delete auto --help" -- \${cur}) ) ;;
+      COMPREPLY=( $(compgen -W "create restore list delete auto --help" -- ${cur}) ) ;;
     schedule)
-      COMPREPLY=( \$(compgen -W "add list remove run logs search --help" -- \${cur}) ) ;;
+      COMPREPLY=( $(compgen -W "add list remove run logs search --help" -- ${cur}) ) ;;
     notify)
-      COMPREPLY=( \$(compgen -W "send config setup test --help" -- \${cur}) ) ;;
+      COMPREPLY=( $(compgen -W "send config setup test --help" -- ${cur}) ) ;;
     workspace)
-      COMPREPLY=( \$(compgen -W "list create switch info detect init --help" -- \${cur}) ) ;;
+      COMPREPLY=( $(compgen -W "list create switch info detect init --help" -- ${cur}) ) ;;
     upgrade)
-      COMPREPLY=( \$(compgen -W "--check --force --help" -- \${cur}) ) ;;
+      COMPREPLY=( $(compgen -W "--check --force --help" -- ${cur}) ) ;;
     plugin)
-      COMPREPLY=( \$(compgen -W "list search install uninstall update validate exec create" -- \${cur}) ) ;;
+      COMPREPLY=( $(compgen -W "list search install uninstall update validate exec create" -- ${cur}) ) ;;
     init)
-      COMPREPLY=( \$(compgen -W "pack web-extension mcp-tool templates --help" -- \${cur}) ) ;;
+      COMPREPLY=( $(compgen -W "pack web-extension mcp-tool templates --help" -- ${cur}) ) ;;
     completion)
-      COMPREPLY=( \$(compgen -W "bash zsh fish" -- \${cur}) ) ;;
+      COMPREPLY=( $(compgen -W "bash zsh fish" -- ${cur}) ) ;;
     *)
       COMPREPLY=() ;;
   esac

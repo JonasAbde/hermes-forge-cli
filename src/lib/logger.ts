@@ -1,5 +1,5 @@
 import { appendFile, mkdir, readFile, stat, unlink, rename, readdir } from 'fs/promises';
-import { watch } from 'fs';
+import { watch, existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import chalk from 'chalk';
@@ -124,6 +124,10 @@ export function tailLogs(service: string, callback: (entry: LogEntry) => void): 
 
   // Track file size so we only read new content since the last read
   let lastSize = 0;
+  if (!existsSync(logPath)) {
+    mkdirSync(join(homedir(), '.forge', 'logs'), { recursive: true });
+    writeFileSync(logPath, '');
+  }
   stat(logPath).then(s => { lastSize = s.size; }).catch(() => { lastSize = 0; });
 
   const watcher = watch(logPath, (eventType) => {

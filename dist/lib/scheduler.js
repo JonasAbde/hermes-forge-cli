@@ -6,6 +6,7 @@ import { writeFile, readFile, mkdir, readdir, unlink } from 'fs/promises';
 import { join } from 'path';
 import { homedir } from 'os';
 import { execa } from 'execa';
+import { randomUUID } from 'crypto';
 const SCHEDULER_DIR = join(homedir(), '.forge', 'scheduler');
 const TASKS_FILE = join(SCHEDULER_DIR, 'tasks.json');
 const LOGS_DIR = join(SCHEDULER_DIR, 'logs');
@@ -93,7 +94,7 @@ async function saveTasks(tasks) {
 }
 // Generate unique ID
 function generateId() {
-    return `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `task_${randomUUID()}`;
 }
 // Add a new task
 export async function addTask(task) {

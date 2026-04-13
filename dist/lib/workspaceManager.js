@@ -7,6 +7,7 @@ import { join, basename, resolve } from 'path';
 import { homedir } from 'os';
 import { existsSync } from 'fs';
 import { execa } from 'execa';
+import { randomUUID } from 'crypto';
 const WORKSPACE_DIR = join(homedir(), '.forge', 'workspaces');
 const WORKSPACES_FILE = join(WORKSPACE_DIR, 'workspaces.json');
 // Ensure directories exist
@@ -31,7 +32,7 @@ async function saveWorkspaces(workspaces) {
 }
 // Generate workspace ID
 function generateId() {
-    return `ws_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+    return `ws_${randomUUID()}`;
 }
 // Add a new workspace
 export async function addWorkspace(name, path, options = {}) {

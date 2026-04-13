@@ -8,6 +8,7 @@ import { join } from 'path';
 import { homedir } from 'os';
 import { execa } from 'execa';
 import { existsSync } from 'fs';
+import { randomUUID } from 'crypto';
 
 const SCHEDULER_DIR = join(homedir(), '.forge', 'scheduler');
 const TASKS_FILE = join(SCHEDULER_DIR, 'tasks.json');
@@ -134,7 +135,7 @@ async function saveTasks(tasks: ScheduledTask[]): Promise<void> {
 
 // Generate unique ID
 function generateId(): string {
-  return `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `task_${randomUUID()}`;
 }
 
 // Add a new task

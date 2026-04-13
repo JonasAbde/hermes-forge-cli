@@ -5,6 +5,7 @@ import { homedir } from 'os';
 import chalk from 'chalk';
 import { printHeader, printSuccess, printInfo, printWarning, printError } from '../lib/output.js';
 
+/* eslint-disable no-useless-escape */
 const BASH_COMPLETION = `
 # Forge CLI Bash Completion
 # Quick setup: source <(forge completion bash)

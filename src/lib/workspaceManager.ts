@@ -60,7 +60,7 @@ async function saveWorkspaces(workspaces: Workspace[]): Promise<void> {
 
 // Generate workspace ID
 function generateId(): string {
-  return `ws_${randomUUID()}`;
+  return `ws_${Date.now()}_${randomUUID().split('-')[0]}`;
 }
 
 // Add a new workspace

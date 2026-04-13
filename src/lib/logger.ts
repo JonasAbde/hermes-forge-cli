@@ -122,6 +122,23 @@ export async function readLogs(service: string, lines: number): Promise<LogEntry
 export function tailLogs(service: string, callback: (entry: LogEntry) => void): () => void {
   const logPath = getLogFilePath(service);
 
+  // Ensure log directory and file exists before watching
+  if (!existsSync(LOG_DIR)) {
+    try {
+      mkdirSync(LOG_DIR, { recursive: true });
+    } catch {
+      // Ignore
+    }
+  }
+
+  if (!existsSync(logPath)) {
+    try {
+      writeFileSync(logPath, '');
+    } catch {
+      // Ignore
+    }
+  }
+
   // Track file size so we only read new content since the last read
   let lastSize = 0;
   if (!existsSync(logPath)) {

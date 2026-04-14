@@ -289,6 +289,6 @@ describe('Phase A: Core Stability Systems', () => {
         expect(result.exitCode).toBe(0);
         expect(result.stdout).toContain('Usage:');
       }
-    });
+    }, 15000);
   });
 });

@@ -94,7 +94,7 @@ async function saveTasks(tasks) {
 }
 // Generate unique ID
 function generateId() {
-    return `task_${randomUUID()}`;
+    return `task_${Date.now()}_${randomUUID()}`;
 }
 // Add a new task
 export async function addTask(task) {

@@ -32,7 +32,7 @@ async function saveWorkspaces(workspaces) {
 }
 // Generate workspace ID
 function generateId() {
-    return `ws_${randomUUID()}`;
+    return `ws_${Date.now()}_${randomUUID().split('-')[0]}`;
 }
 // Add a new workspace
 export async function addWorkspace(name, path, options = {}) {

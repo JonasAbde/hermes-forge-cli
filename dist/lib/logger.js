@@ -1,5 +1,5 @@
 import { appendFile, mkdir, readFile, stat, unlink, rename, readdir } from 'fs/promises';
-import { watch } from 'fs';
+import { watch, existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import chalk from 'chalk';
@@ -91,8 +91,29 @@ export async function readLogs(service, lines) {
 }
 export function tailLogs(service, callback) {
     const logPath = getLogFilePath(service);
+    // Ensure log directory and file exists before watching
+    if (!existsSync(LOG_DIR)) {
+        try {
+            mkdirSync(LOG_DIR, { recursive: true });
+        }
+        catch {
+            // Ignore
+        }
+    }
+    if (!existsSync(logPath)) {
+        try {
+            writeFileSync(logPath, '');
+        }
+        catch {
+            // Ignore
+        }
+    }
     // Track file size so we only read new content since the last read
     let lastSize = 0;
+    if (!existsSync(logPath)) {
+        mkdirSync(join(homedir(), '.forge', 'logs'), { recursive: true });
+        writeFileSync(logPath, '');
+    }
     stat(logPath).then(s => { lastSize = s.size; }).catch(() => { lastSize = 0; });
     const watcher = watch(logPath, (eventType) => {
         if (eventType !== 'change')

@@ -3,13 +3,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import { printHeader } from './lib/output.js';
 const program = new Command();
-program
-    .name('forge')
-    .description('Hermes Forge Platform CLI - unified development, pack management, and MCP tools')
-    .version('0.1.0')
-    .option('--verbose', 'enable verbose output')
-    .showHelpAfterError();
-// Static imports for reliable command registration
+program.name('forge').description('Hermes Forge Platform CLI - unified development, pack management, and MCP tools').version('0.1.0').option('--verbose', 'enable verbose output').showHelpAfterError();
 import statusCommand from './commands/status.js';
 import doctorCommand from './commands/doctor.js';
 import devCommand from './commands/dev.js';
@@ -31,27 +25,9 @@ import scheduleCommand from './commands/schedule.js';
 import notifyCommand from './commands/notify.js';
 import workspaceCommand from './commands/workspace.js';
 import interactiveCommand from './commands/interactive.js';
-program.addCommand(statusCommand);
-program.addCommand(doctorCommand);
-program.addCommand(devCommand);
-program.addCommand(docsCommand);
-program.addCommand(openCommand);
-program.addCommand(packCommand);
-program.addCommand(mcpCommand);
-program.addCommand(configCommand);
-program.addCommand(envCommand);
-program.addCommand(logsCommand);
-program.addCommand(monitorCommand);
-program.addCommand(initCommand);
-program.addCommand(pluginCommand);
-program.addCommand(completionCommand);
-program.addCommand(aliasCommand);
-program.addCommand(backupCommand);
-program.addCommand(upgradeCommand);
-program.addCommand(scheduleCommand);
-program.addCommand(notifyCommand);
-program.addCommand(workspaceCommand);
-program.addCommand(interactiveCommand);
+import remoteCommand from './commands/remote/index.js';
+import deployCommand from './commands/deploy.js';
+program.addCommand(statusCommand).addCommand(doctorCommand).addCommand(devCommand).addCommand(docsCommand).addCommand(openCommand).addCommand(packCommand).addCommand(mcpCommand).addCommand(configCommand).addCommand(envCommand).addCommand(logsCommand).addCommand(monitorCommand).addCommand(initCommand).addCommand(pluginCommand).addCommand(completionCommand).addCommand(aliasCommand).addCommand(backupCommand).addCommand(upgradeCommand).addCommand(scheduleCommand).addCommand(notifyCommand).addCommand(workspaceCommand).addCommand(interactiveCommand).addCommand(remoteCommand).addCommand(deployCommand);
 program.parse(process.argv);
 if (!process.argv.slice(2).length) {
     printHeader('Forge CLI');

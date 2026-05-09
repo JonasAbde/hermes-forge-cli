@@ -292,7 +292,7 @@ describe('Phase B: CLI improvements', () => {
     const allCommands = [
       'status', 'doctor', 'dev', 'docs', 'open', 'pack', 'mcp', 'config',
       'env', 'logs', 'monitor', 'init', 'plugin', 'completion', 'alias',
-      'backup', 'upgrade', 'schedule', 'notify', 'workspace', 'interactive',
+      'backup', 'upgrade', 'schedule', 'notify', 'workspace', 'interactive', 'remote', 'deploy',
     ];
 
     allCommands.forEach((cmd) => {

@@ -23,7 +23,7 @@ _forge_completions() {
   cur="\${COMP_WORDS[COMP_CWORD]}"
 
   # Full list of top-level commands
-  local commands="status doctor dev docs open pack mcp config env logs monitor init plugin completion alias backup upgrade schedule notify workspace interactive help"
+  local commands="status doctor dev docs open pack pack/sync mcp config env logs monitor init plugin completion alias backup upgrade schedule notify workspace interactive remote deploy help"
 
   if [ $COMP_CWORD -eq 1 ]; then
     COMPREPLY=( \$(compgen -W "\${commands}" -- \${cur}) )
@@ -41,8 +41,18 @@ _forge_completions() {
       COMPREPLY=( \$(compgen -W "--port --no-open --help" -- \${cur}) ) ;;
     open)
       COMPREPLY=( \$(compgen -W "docs hub showcase catalog chat api" -- \${cur}) ) ;;
+    remote)
+      local remote_cmds="status login me packs"
+      if [ $COMP_CWORD -eq 2 ]; then
+        COMPREPLY=( \$(compgen -W "\${remote_cmds}" -- \${cur}) )
+      fi ;;
+    deploy)
+      local deploy_cmds="list create start stop delete"
+      if [ $COMP_CWORD -eq 2 ]; then
+        COMPREPLY=( \$(compgen -W "\${deploy_cmds}" -- \${cur}) )
+      fi ;;
     pack)
-      local pack_cmds="list validate build metadata"
+      local pack_cmds="list validate build metadata sync"
       if [ $COMP_CWORD -eq 2 ]; then
         COMPREPLY=( \$(compgen -W "\${pack_cmds}" -- \${cur}) )
       else
@@ -122,9 +132,34 @@ _forge_commands() {
     'notify:Manage notifications'
     'workspace:Manage workspaces'
     'interactive:Interactive guided mode'
+    'remote:Manage remote forge connection'
+    'deploy:Manage agent deployments'
     'help:Display help for a command'
   )
   _describe -t commands 'forge commands' commands
+}
+
+_forge_remote() {
+  local -a remote_commands
+  remote_commands=(
+    'status:Show remote forge status'
+    'login:Login to remote forge'
+    'me:Show authenticated user profile'
+    'packs:List remote packs'
+  )
+  _describe -t remote_commands 'remote commands' remote_commands
+}
+
+_forge_deploy() {
+  local -a deploy_commands
+  deploy_commands=(
+    'list:List all deployments'
+    'create:Create a new deployment'
+    'start:Start a deployment'
+    'stop:Stop a deployment'
+    'delete:Delete a deployment'
+  )
+  _describe -t deploy_commands 'deploy commands' deploy_commands
 }
 
 _forge_pack() {
@@ -134,6 +169,7 @@ _forge_pack() {
     'validate:Validate pack schema'
     'build:Build pack metadata and cutouts'
     'metadata:Generate compact metadata for MCP'
+    'sync:Sync packs with remote forge'
   )
   _describe -t pack_commands 'pack commands' pack_commands
 }
@@ -238,6 +274,8 @@ _forge() {
         '--json[Output as JSON]' \
         '--clear-locks[Clear stale lock files]'
       ;;
+    remote)    _forge_remote ;;
+    deploy)    _forge_deploy ;;
     *)
       _files ;;
   esac
@@ -273,6 +311,8 @@ complete -c forge -n '__fish_use_subcommand' -a 'schedule'    -d 'Manage schedul
 complete -c forge -n '__fish_use_subcommand' -a 'notify'      -d 'Manage notifications'
 complete -c forge -n '__fish_use_subcommand' -a 'workspace'   -d 'Manage workspaces'
 complete -c forge -n '__fish_use_subcommand' -a 'interactive' -d 'Interactive guided mode'
+complete -c forge -n '__fish_use_subcommand' -a 'remote'     -d 'Manage remote forge connection'
+complete -c forge -n '__fish_use_subcommand' -a 'deploy'     -d 'Manage agent deployments'
 
 # --- open targets ---
 complete -c forge -n '__fish_seen_subcommand_from open' -a 'docs'     -d 'Forge Docs'
@@ -287,6 +327,20 @@ complete -c forge -n '__fish_seen_subcommand_from pack' -a 'list'     -d 'List p
 complete -c forge -n '__fish_seen_subcommand_from pack' -a 'validate' -d 'Validate pack schema'
 complete -c forge -n '__fish_seen_subcommand_from pack' -a 'build'    -d 'Build pack'
 complete -c forge -n '__fish_seen_subcommand_from pack' -a 'metadata' -d 'Generate compact metadata'
+complete -c forge -n '__fish_seen_subcommand_from pack' -a 'sync'    -d 'Sync packs with remote forge'
+
+# --- remote subcommands ---
+complete -c forge -n '__fish_seen_subcommand_from remote' -a 'status' -d 'Show remote forge status'
+complete -c forge -n '__fish_seen_subcommand_from remote' -a 'login'  -d 'Login to remote forge'
+complete -c forge -n '__fish_seen_subcommand_from remote' -a 'me'     -d 'Show authenticated user profile'
+complete -c forge -n '__fish_seen_subcommand_from remote' -a 'packs'  -d 'List remote packs'
+
+# --- deploy subcommands ---
+complete -c forge -n '__fish_seen_subcommand_from deploy' -a 'list'   -d 'List all deployments'
+complete -c forge -n '__fish_seen_subcommand_from deploy' -a 'create' -d 'Create a new deployment'
+complete -c forge -n '__fish_seen_subcommand_from deploy' -a 'start'  -d 'Start a deployment'
+complete -c forge -n '__fish_seen_subcommand_from deploy' -a 'stop'   -d 'Stop a deployment'
+complete -c forge -n '__fish_seen_subcommand_from deploy' -a 'delete' -d 'Delete a deployment'
 
 # --- mcp subcommands ---
 complete -c forge -n '__fish_seen_subcommand_from mcp' -a 'start'  -d 'Start MCP registry'

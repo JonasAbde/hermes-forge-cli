@@ -58,11 +58,10 @@ export class ForgeApiClient {
 
   async checkHealth(): Promise<{ status: string; forge_db?: string; catalog?: string } | null> {
     try {
-      const res = await fetch(`${this.base.replace('/api/forge/v1', '')}/api/forge/v1/health`, {
-        signal: AbortSignal.timeout(5000),
-      });
-      if (!res.ok) return null;
-      return (await res.json()) as { status: string; forge_db?: string; catalog?: string };
+      // Use /me as liveness proxy — returns {status:"ok",user:null} even without auth.
+      const res = await this.request<{ status: string }>('GET', '/me');
+      if (res.status >= 500) return null;
+      return res.data.status === 'ok' ? { status: 'ok' } : null;
     } catch {
       return null;
     }
@@ -71,7 +70,8 @@ export class ForgeApiClient {
   // ─── Packs ────────────────────────────────
 
   async listPacks(): Promise<ForgeRemotePack[]> {
-    const { data } = await this.request<{ packs: ForgeRemotePack[] }>('GET', '/packs');
+    // /api/forge/market/packs is the public pack listing endpoint.
+    const { data } = await this.request<{ packs: ForgeRemotePack[] }>('GET', '../market/packs');
     return data.packs || [];
   }
 

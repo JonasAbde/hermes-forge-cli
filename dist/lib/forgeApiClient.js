@@ -37,12 +37,11 @@ export class ForgeApiClient {
     // ─── Health ────────────────────────────────
     async checkHealth() {
         try {
-            const res = await fetch(`${this.base.replace('/api/forge/v1', '')}/api/forge/v1/health`, {
-                signal: AbortSignal.timeout(5000),
-            });
-            if (!res.ok)
+            // Use /me as liveness proxy — returns {status:"ok",user:null} even without auth.
+            const res = await this.request('GET', '/me');
+            if (res.status >= 500)
                 return null;
-            return (await res.json());
+            return res.data.status === 'ok' ? { status: 'ok' } : null;
         }
         catch {
             return null;
@@ -50,7 +49,8 @@ export class ForgeApiClient {
     }
     // ─── Packs ────────────────────────────────
     async listPacks() {
-        const { data } = await this.request('GET', '/packs');
+        // /api/forge/market/packs is the public pack listing endpoint.
+        const { data } = await this.request('GET', '../market/packs');
         return data.packs || [];
     }
     // ─── Deployments ──────────────────────────

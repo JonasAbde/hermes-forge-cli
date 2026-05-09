@@ -8,9 +8,9 @@ const p = new Command('status')
   .option('--json', 'output as JSON')
   .action(async (o) => {
     const cfg = config.get();
-    const base = cfg.remote?.baseUrl || 'https://forge.tekup.dk';
+    const base = cfg.remote?.baseUrl || 'https://forge.tekup.dk/api/forge/v1';
     const client = new ForgeApiClient({ baseUrl: base, apiKey: cfg.remote?.apiKey });
-    printHeader('Remote Forge \u2014 ' + base);
+    printHeader('Remote Forge — ' + base);
     try {
       const health = await client.checkHealth();
       const user = await client.getProfile();

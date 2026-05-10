@@ -1,1 +1,1 @@
-{"version":3,"file":"me.d.ts","sourceRoot":"","sources":["../../../src/commands/remote/me.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,MAAM,WAAW,CAAC;AAKpC,QAAA,MAAM,CAAC,SAQH,CAAC;AACL,eAAe,CAAC,CAAC"}
+{"version":3,"file":"me.d.ts","sourceRoot":"","sources":["../../../src/commands/remote/me.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,MAAM,WAAW,CAAC;AAMpC,QAAA,MAAM,CAAC,SA8DH,CAAC;AAEL,eAAe,CAAC,CAAC"}

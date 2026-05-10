@@ -5,6 +5,11 @@ import { detectWsl } from '../lib/wslDetector.js';
 import { config } from '../lib/configManager.js';
 import { getAllLocks, isLockValid } from '../lib/lockManager.js';
 import { printHeader } from '../lib/output.js';
+function getTerminalSize() {
+    const cols = process.stdout.columns || 80;
+    const rows = process.stdout.rows || 24;
+    return { cols, rows };
+}
 function formatDuration(ms) {
     if (ms < 1000)
         return `${ms}ms`;
@@ -24,20 +29,7 @@ function formatBytes(bytes) {
     return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)}GB`;
 }
 function clearScreen() {
-    // Clear screen and move cursor to top
     process.stdout.write('\x1Bc\x1B[3J\x1B[H');
-}
-function drawBox(title, content, width = 60) {
-    const horizontal = '─'.repeat(width - 2);
-    const top = `┌${horizontal}┐`;
-    const bottom = `└${horizontal}┘`;
-    const lines = content.map(line => {
-        const padded = line.slice(0, width - 4);
-        const padding = ' '.repeat(Math.max(0, width - 4 - padded.length));
-        return `│ ${padded}${padding} │`;
-    });
-    const titleLine = `│ ${chalk.bold.cyan(title)}${' '.repeat(Math.max(0, width - 4 - title.length))} │`;
-    return [top, titleLine, ...lines, bottom].join('\n');
 }
 function getStateColor(state) {
     switch (state) {
@@ -58,7 +50,6 @@ function getStateIcon(state) {
     }
 }
 async function fetchServiceStats(service) {
-    // Try to get process stats if we have a PID
     if (service.pid && service.state === 'up') {
         try {
             const { execa } = await import('execa');
@@ -70,7 +61,7 @@ async function fetchServiceStats(service) {
                 const parts = stdout.trim().split(/\s+/);
                 if (parts.length >= 3) {
                     service.cpu = parseFloat(parts[0]) || undefined;
-                    service.memory = parseInt(parts[2], 10) * 1024 || undefined; // rss is in KB
+                    service.memory = parseInt(parts[2], 10) * 1024 || undefined;
                 }
             }
         }
@@ -87,10 +78,8 @@ async function getAllServiceStatus() {
         { key: 'docs', name: 'Docs (VitePress)', port: cfg.ports.docs, url: `http://127.0.0.1:${cfg.ports.docs}`, state: 'down', restartCount: 0 },
         { key: 'mcp', name: 'MCP Registry', port: cfg.ports.mcp, url: `http://127.0.0.1:${cfg.ports.mcp}/health`, state: 'down', restartCount: 0 }
     ];
-    // Get locks
     const allLocks = await getAllLocks();
     const lockMap = new Map(allLocks.map(l => [l.service, l]));
-    // Check health for each service
     const healthResults = await checkMultipleHealth(services.map(s => s.url));
     for (let i = 0; i < services.length; i++) {
         const service = services[i];
@@ -108,7 +97,6 @@ async function getAllServiceStatus() {
             else {
                 service.pid = lock.pid;
                 service.restartCount = lock.restartCount || 0;
-                // Calculate uptime
                 const startTime = new Date(lock.startTime).getTime();
                 service.uptime = Date.now() - startTime;
                 if (health.status === 'up') {
@@ -116,29 +104,51 @@ async function getAllServiceStatus() {
                     service.responseTime = health.responseTime;
                 }
                 else {
-                    service.state = 'starting'; // Lock valid but not healthy yet
+                    service.state = 'starting';
                 }
             }
         }
-        // Fetch stats for running services
         await fetchServiceStats(service);
     }
     return services;
 }
-function renderDashboard(services) {
+let currentInterval = 2000;
+function renderDashboard(services, refreshMs = currentInterval) {
+    const { cols, rows } = getTerminalSize();
+    // Safety: minimum terminal size check
+    if (cols < 50 || rows < 10) {
+        clearScreen();
+        console.log(chalk.yellow('⚠ Terminal too small for monitor view'));
+        console.log(chalk.gray(`  Need at least 50×10, have ${cols}×${rows}`));
+        console.log(chalk.gray('  Resize or run: forge monitor --once'));
+        console.log('');
+        console.log(chalk.gray('  Press Ctrl+C to exit'));
+        return;
+    }
     clearScreen();
     const timestamp = new Date().toLocaleString();
-    console.log(chalk.bold.cyan(`\n  🔥 Forge Monitor - ${timestamp}\n`));
+    const titleWidth = Math.min(cols - 2, 60);
+    const hr = '─'.repeat(titleWidth);
+    console.log(chalk.bold.cyan(`\n  ⚡ Forge Monitor  ${chalk.gray(timestamp)}`));
+    console.log(chalk.cyan(`  ${hr}\n`));
+    // Empty state
+    if (services.length === 0) {
+        console.log(chalk.gray('  No services configured.'));
+        console.log(chalk.gray('  Run forge init to set up your workspace.\n'));
+        return;
+    }
     // Service status section
-    console.log(chalk.bold('  Services:'));
+    console.log(chalk.bold('  Services'));
     console.log('');
     for (const service of services) {
         const stateColor = getStateColor(service.state);
         const icon = getStateIcon(service.state);
-        // Main line: Icon Name Port Status
-        const statusLine = `    ${stateColor(icon)} ${chalk.bold(service.name.padEnd(20))} ${String(service.port).padStart(4)}   ${stateColor(service.state.toUpperCase())}`;
-        console.log(statusLine);
-        // Details line (if running)
+        const statusLabel = stateColor(service.state.toUpperCase());
+        // Service name + port
+        const namePart = `    ${icon} ${chalk.bold(service.name.padEnd(20))}`;
+        const portPart = chalk.gray(String(service.port).padStart(5));
+        console.log(`${namePart}${portPart}  ${statusLabel}`);
+        // Details line
         if (service.state === 'up' || service.state === 'starting') {
             const details = [];
             if (service.pid)
@@ -162,25 +172,25 @@ function renderDashboard(services) {
         }
         console.log('');
     }
-    // Summary box
+    // Summary
     const upCount = services.filter(s => s.state === 'up').length;
     const crashedCount = services.filter(s => s.state === 'crashed').length;
     const downCount = services.filter(s => s.state === 'down').length;
-    const summaryLines = [];
+    console.log(chalk.cyan(`  ${hr}`));
     if (upCount === services.length) {
-        summaryLines.push(chalk.green(`  ✓ All ${upCount} services healthy`));
+        console.log(chalk.green(`  ✓ All ${upCount} services healthy`));
     }
     else {
-        summaryLines.push(`  ${chalk.green(`● ${upCount} up`)}  ${chalk.red(`✗ ${crashedCount} crashed`)}  ${chalk.gray(`○ ${downCount} down`)}`);
+        console.log(`  ${chalk.green(`● ${upCount} up`)}  ${chalk.red(`✗ ${crashedCount} crashed`)}  ${chalk.gray(`○ ${downCount} down`)}`);
     }
     const wsl = detectWsl();
     if (wsl.isWsl2) {
-        summaryLines.push('');
-        summaryLines.push(chalk.gray(`  WSL2 Host: ${wsl.hostIp || 'auto-detected'}`));
+        console.log(chalk.gray(`  WSL2 Host: ${wsl.hostIp || 'auto-detected'}`));
     }
-    summaryLines.push('');
-    summaryLines.push(chalk.gray('  Press Ctrl+C to exit'));
-    console.log(summaryLines.join('\n'));
+    // Keyboard hints
+    console.log('');
+    console.log(chalk.gray('  q ' + chalk.dim('quit') + '  1-4 ' + chalk.dim('service detail') + '  r ' + chalk.dim('refresh now')));
+    console.log(chalk.gray('  ' + chalk.dim(`Ctrl+C to exit  •  ${refreshMs}ms refresh`)));
     console.log('');
 }
 const program = new Command('monitor')
@@ -190,23 +200,57 @@ const program = new Command('monitor')
     .action(async (options) => {
     const interval = parseInt(options.interval, 10);
     if (options.once) {
-        // Single run mode
         const services = await getAllServiceStatus();
         renderDashboard(services);
         return;
     }
     // Continuous monitoring mode
     printHeader('Forge Monitor');
-    console.log(chalk.gray(`Refreshing every ${interval}ms...\n`));
+    console.log(chalk.gray(`Refreshing every ${interval}ms...`));
+    console.log('');
+    currentInterval = interval;
     let running = true;
-    // Handle Ctrl+C
-    process.on('SIGINT', () => {
-        running = false;
-        clearScreen();
-        console.log(chalk.green('\n✓ Monitor stopped\n'));
-        process.exit(0);
-    });
-    // Initial render
+    // Handle Ctrl+C gracefully
+    const handleExit = () => {
+        if (running) {
+            running = false;
+            clearScreen();
+            console.log(chalk.green('\n✓ Monitor stopped\n'));
+            process.exit(0);
+        }
+    };
+    process.on('SIGINT', handleExit);
+    process.on('SIGTERM', handleExit);
+    // Handle terminal resize
+    const handleResize = () => {
+        // Re-render on next tick to avoid rapid redraws during resize
+        // Debounce is handled by the update loop — just set a flag
+        resizePending = true;
+    };
+    let resizePending = false;
+    process.stdout.on('resize', handleResize);
+    // Initial render with loading state
+    const { cols } = getTerminalSize();
+    if (cols < 50) {
+        console.log(chalk.yellow('⚠ Terminal too small — try a wider terminal window'));
+    }
+    // Set up keyboard input handling (raw mode)
+    const stdin = process.stdin;
+    if (stdin.isTTY) {
+        stdin.setRawMode?.(true);
+        stdin.resume();
+        stdin.setEncoding('utf8');
+        stdin.on('data', (key) => {
+            // 'q' or 'Q' to quit
+            if (key === 'q' || key === 'Q' || key === '\u0003') {
+                handleExit();
+            }
+            // 'r' or 'R' to force refresh
+            if (key === 'r' || key === 'R') {
+                resizePending = true;
+            }
+        });
+    }
     const services = await getAllServiceStatus();
     renderDashboard(services);
     // Update loop
@@ -214,14 +258,24 @@ const program = new Command('monitor')
         await new Promise(resolve => setTimeout(resolve, interval));
         if (!running)
             break;
+        // If no resize pending and not forced, skip this tick
+        if (!resizePending)
+            continue;
+        resizePending = false;
         try {
             const updatedServices = await getAllServiceStatus();
             renderDashboard(updatedServices);
         }
-        catch (error) {
+        catch {
             // Ignore errors during refresh
         }
     }
+    // Cleanup
+    if (stdin.isTTY) {
+        stdin.setRawMode?.(false);
+        stdin.pause();
+    }
+    process.stdout.off('resize', handleResize);
 });
 export default program;
 //# sourceMappingURL=monitor.js.map

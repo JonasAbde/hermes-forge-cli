@@ -10,7 +10,7 @@ function errorMessage(error) {
 }
 const program = new Command('docs')
     .description('Start Forge Docs (VitePress) and optionally open in browser')
-    .option('--open', 'Open browser after starting (default: true)', true)
+    .option('--open', 'Open browser after starting', true)
     .option('--no-open', 'Do not open browser')
     .option('--port <number>', 'Override docs port', '5190')
     .action(async (options) => {

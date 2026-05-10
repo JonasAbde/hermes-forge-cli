@@ -1,60 +1,137 @@
 # @hermes-forge/cli
 
-Official CLI for Hermes Forge Platform.
+Official CLI for Hermes Forge Platform — unified development, pack management, and deployment tooling.
 
 ## Installation
 
-From the repository root:
-
 ```bash
+# Install from repo
 npm install --workspace=cli
-```
 
-**Invoking the CLI without a global install:** use the root script (builds the workspace then runs `cli/dist`):
-
-```bash
-npm run forge -- status
-npm run forge -- doctor
-# …same pattern for any subcommand
-```
-
-Or install globally once published:
-
-```bash
+# Or globally once published
 npm install -g @hermes-forge/cli
+
+# Run without global install (from repo root)
+npm run forge -- status
 ```
 
-## Usage
+## Authentication
 
 ```bash
-forge status
-forge doctor
-forge dev --with-docs
-forge docs
-forge open hub
-forge pack list
-forge mcp start
+# Login to remote forge
+forge remote login --api-key <your-api-key>
+
+# Check auth status
+forge remote status
+
+# View your profile
+forge remote me
 ```
+
+## Remote Commands
+
+Manage your connection to `forge.tekup.dk`:
+
+| Command | Description |
+|---------|-------------|
+| `forge remote status` | Show remote forge status and health |
+| `forge remote login` | Authenticate with the remote forge |
+| `forge remote me` | Show your authenticated profile |
+| `forge remote packs` | List packs available on the remote forge |
+
+## Deploy Commands
+
+Deploy agent packs to the remote forge instance:
+
+| Command | Description |
+|---------|-------------|
+| `forge deploy list` | List all deployments |
+| `forge deploy create <name> <pack-ids...>` | Create a new deployment |
+| `forge deploy start <id>` | Start a deployment |
+| `forge deploy stop <id>` | Stop a deployment |
+| `forge deploy delete <id>` | Delete a deployment |
+
+Status colors: **green** = running, **gray** = stopped, **red** = error.
+
+## Pack Commands
+
+Manage and build Agent Packs locally:
+
+| Command | Description |
+|---------|-------------|
+| `forge pack list` | List local packs (supports `--catalog`, `--theme`, `--json`) |
+| `forge pack validate` | Validate pack schema (supports `--strict`) |
+| `forge pack build` | Build pack metadata and cutouts (supports `--watch`, `--out`) |
+| `forge pack metadata` | Generate compact metadata for MCP (supports `--catalog`, `--out`, `--format`) |
+| `forge pack sync` | Sync local packs with remote forge (supports `--dry-run`, `--target`, `--api-key`) |
 
 ## Core Commands
 
-- `forge status [--watch] [--json]` — Overview of all services
-- `forge doctor [--strict] [--quick] [--deep] [--json]` — Diagnostics (`--deep` runs `smoke-test` + `smoke-auth`, optional `smoke-http` when API is up; use `FORGE_REPO_ROOT` if not run from repo root)
-- `forge dev [--with-docs] [--only-web] [--only-api] [--only-docs] [--forge-api-proxy]` — Start development services (`--only-web` forces embedded catalog unless `--forge-api-proxy`)
-- `forge docs [--open]` — Start Forge Docs (VitePress)
-- `forge open <target>` — Open docs, hub, showcase, or API in browser
-- `forge pack ...` — Pack management (list, validate, build)
-- `forge mcp ...` — MCP registry commands
+| Command | Description |
+|---------|-------------|
+| `forge status [--watch] [--json]` | Overview of all services |
+| `forge doctor [--strict] [--quick] [--deep] [--json]` | Run system diagnostics |
+| `forge dev [--with-docs] [--only-api] [--only-web] [--only-docs]` | Start development services |
+| `forge docs [--open] [--no-open]` | Start Forge Docs (VitePress) |
+| `forge open <target>` | Open a Forge URL in browser (targets: docs, hub, showcase, catalog, chat, api) |
+| `forge config [get|set|reset]` | Manage CLI configuration |
+| `forge env [use|list|validate|diff|show]` | Manage environment configurations |
+| `forge logs [--follow] [--lines] [--level]` | View service logs |
+| `forge monitor` | Real-time monitoring dashboard |
+| `forge init [pack|web-extension|mcp-tool]` | Initialize a new project |
+| `forge mcp [start|stop|status|test|tools]` | Manage MCP Registry server |
+| `forge plugin [list|search|install|uninstall|update]` | Manage plugins |
+| `forge completion <bash|zsh|fish>` | Generate shell completion scripts |
+| `forge alias [list|set|remove|show|run|init]` | Manage command aliases |
+| `forge backup [create|restore|list|delete|auto]` | Backup and restore data |
+| `forge upgrade [--check] [--force]` | Upgrade Forge CLI |
+| `forge schedule [add|list|remove|run|logs|search]` | Manage scheduled tasks |
+| `forge notify [send|config|setup|test]` | Manage notifications |
+| `forge workspace [list|create|switch|info|detect|init]` | Manage workspaces |
+| `forge interactive` | Interactive guided mode |
+| `forge version` | Output the current version |
+| `forge help [command]` | Display help |
 
-Run `forge --help` or `forge <command> --help` for details.
+## Shell Completion
 
-## WSL2 Notes
+Generate tab-completion for your shell:
 
-The CLI automatically detects WSL2 and provides appropriate browser and URL recommendations. Use `127.0.0.1` or the detected host IP when accessing from Windows.
+```bash
+# Bash
+source <(forge completion bash)
+forge completion bash --install
+
+# Zsh
+source <(forge completion zsh)
+forge completion zsh --install
+
+# Fish
+forge completion fish | source
+forge completion fish --install
+```
+
+## Troubleshooting
+
+**Connection issues:**
+- Verify your internet connection
+- Run `forge remote status` to check if the remote forge is reachable
+- Ensure your API key is set: `forge remote login --api-key <key>`
+
+**Build errors:**
+- Run `npx tsc --noEmit` in `cli/` to check for TypeScript errors
+- Ensure all dependencies are installed: `npm install` from repo root
+
+**Auth errors:**
+- Re-authenticate: `forge remote login --api-key <key>`
+- Check your config: `forge config get`
+
+**WSL2:**
+- The CLI auto-detects WSL2 and adjusts browser and URL handling
+- Use `127.0.0.1` or the detected host IP when accessing from Windows
 
 ## Configuration
 
-Configuration is stored in `~/.forge/config.json`. Use:
+Stored in `~/.forge/config.json`:
 
 ```bash
 forge config set ports.docs 5191
@@ -63,19 +140,14 @@ forge config get
 
 ## Development
 
-Fra **repo-roden** (samme som CI `forge-cli-check`):
-
 ```bash
+# Run tests from repo root
 npm run test:cli
-```
 
-Eller inde i `cli/`:
-
-```bash
+# Inside cli/
 cd cli
 npm run dev     # Watch build
 npm test        # Run tests
 npm run lint
+npx tsc         # Type-check
 ```
-
-This CLI replaces the previous ad-hoc `npm run dev*` scripts and provides consistent, well-documented development workflows across the entire Forge Platform.

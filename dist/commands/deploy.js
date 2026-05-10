@@ -16,6 +16,10 @@ const listCmd = new Command('list').description('List all deployments').option('
             return;
         }
         printHeader('Deployments (' + deps.length + ')');
+        if (deps.length === 0) {
+            printInfo('No deployments found. Create one with: forge deploy create <name> <pack-ids...>');
+            return;
+        }
         const table = new Table({ head: [chalk.bold('Name'), chalk.bold('Status'), chalk.bold('Ver'), chalk.bold('Packs')], colWidths: [22, 12, 6, 34], style: { head: ['cyan'] } });
         deps.forEach((d) => { const c = d.status === 'running' ? chalk.green : d.status === 'error' ? chalk.red : chalk.gray; table.push([d.name, c(d.status), String(d.version), (d.pack_ids || []).join(', ').slice(0, 32)]); });
         console.log(table.toString());

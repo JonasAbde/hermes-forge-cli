@@ -10,7 +10,8 @@ const p = new Command('status')
     const cfg = config.get();
     const base = cfg.remote?.baseUrl || 'https://forge.tekup.dk/api/forge/v1';
     const client = new ForgeApiClient({ baseUrl: base, apiKey: cfg.remote?.apiKey });
-    printHeader('Remote Forge — ' + base);
+    printHeader('Remote Forge Status');
+    printInfo('Endpoint: ' + chalk.cyan(base));
     try {
         const health = await client.checkHealth();
         const user = await client.getProfile();
@@ -19,20 +20,20 @@ const p = new Command('status')
             return;
         }
         if (health) {
-            printSuccess('Status: ' + (health.status || 'ok'));
+            printSuccess('✓ Status: ' + (health.status || 'ok'));
             if (health.forge_db)
-                printInfo('DB: ' + health.forge_db);
+                printInfo('  DB: ' + health.forge_db);
             if (health.catalog)
-                printInfo('Catalog: ' + health.catalog);
+                printInfo('  Catalog: ' + health.catalog);
         }
         else {
-            printError('Could not reach forge.tekup.dk');
+            printError('✗ Could not reach forge.tekup.dk');
         }
         if (user) {
-            printInfo('Authenticated as: ' + chalk.bold(user.email) + ' (' + user.role + ', ' + user.tier + ')');
+            printInfo('User: ' + chalk.bold(user.email) + ' (' + user.role + ', ' + user.tier + ')');
         }
         else {
-            printInfo('Not authenticated. Run: forge remote login');
+            printInfo('Auth: Not authenticated. Run: forge remote login');
         }
     }
     catch (err) {

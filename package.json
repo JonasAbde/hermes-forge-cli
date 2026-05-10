@@ -1,10 +1,10 @@
 {
-  "name": "@hermes-forge/cli",
+  "name": "hermes-forge-cli",
   "version": "1.0.0",
   "description": "Official CLI for Hermes Forge Platform - dev, status, pack management, MCP, and doctor",
   "type": "module",
   "bin": {
-    "forge": "./bin/forge.js"
+    "forge": "bin/forge.js"
   },
   "main": "dist/index.js",
   "files": [
@@ -40,6 +40,6 @@
     "vitest": "^2.1.8"
   },
   "publishConfig": {
-    "@hermes-forge:registry": "https://npm.pkg.github.com"
+    "registry": "https://npm.pkg.github.com"
   }
 }

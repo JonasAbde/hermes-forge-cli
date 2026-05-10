@@ -90,6 +90,15 @@ Returned if the endpoint is not yet deployed.
 
 ## Implementation Priority
 
-**Medium** — CLI already works correctly without this endpoint:
-- `forge pack sync --dry-run` shows what would be synced (fully functional)
-- `forge pack sync` without dry-run gracefully reports 404 and suggests backend implementation
+**Done** — The endpoint has been implemented in the Forge API server (`server/forge-api-v1.mjs`), including:
+- `POST /api/forge/v1/admin/packs/sync` route with admin auth guard
+- `packs` table in SQLite (created automatically via schema init)
+- `upsertPack()`, `getPack()`, `listPacks()`, `deletePack()` store functions
+- Idempotent upsert by `pack_id`
+- Audit logging of all sync operations
+- 6 integration tests in `forge-api-v1.test.mjs`
+
+The CLI (`forge pack sync`) now works end-to-end:
+- `forge pack sync --dry-run` — preview what would sync
+- `forge pack sync` — actually syncs to the configured remote instance
+- Requires admin API key (validated on server side)

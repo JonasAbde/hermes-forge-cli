@@ -41,11 +41,6 @@ const program = new Command('sync')
         console.log('  ' + chalk.cyan((pack.pack_id || '').padEnd(30)) + ' ' + (pack.name || '(unnamed)'));
       });
       printInfo('Dry-run complete: would sync ' + packs.length + ' packs to ' + o.target);
-      printInfo('To actually sync, run without --dry-run');
-
-      // Note about missing backend endpoint
-      printWarning('Backend note: The sync endpoint (' + BACKEND_SYNC_ENDPOINT + ')');
-      printWarning('is not yet deployed on the server. Actual sync will fail until deployed.');
       return;
     }
 
@@ -72,25 +67,22 @@ const program = new Command('sync')
         body: JSON.stringify({ packs }),
       });
 
-      if (res.status === 404) {
-        printError('Sync endpoint not found on server (HTTP 404).');
-        printWarning('The backend endpoint ' + BACKEND_SYNC_ENDPOINT + ' has not been deployed yet.');
-        printInfo('To implement the backend endpoint, see: docs/CLI_PACK_SYNC_CONTRACT.md');
-        printInfo('Expected API contract:');
-        printInfo('  POST ' + fullUrl);
-        printInfo('  Body: { packs: Array<{ pack_id, name, ... }> }');
-        printInfo('  Response: { synced: number, errors?: string[] }');
-        return;
-      }
-
       if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + (await res.text()));
 
-      const result = (await res.json()) as { synced: number; errors?: string[] };
-      printSuccess('Synced ' + result.synced + ' packs successfully');
+      const body = (await res.json()) as { status?: string; synced: number; errors?: string[] };
+      const synced = body.synced ?? 0;
 
-      if (result.errors?.length) {
-        printWarning(result.errors.length + ' errors during sync:');
-        result.errors.forEach((e: string) => printError(e));
+      if (synced === packs.length) {
+        printSuccess('All ' + synced + ' packs synced successfully');
+      } else if (synced > 0) {
+        printSuccess('Synced ' + synced + ' of ' + packs.length + ' packs');
+      } else {
+        printError('No packs were synced.');
+      }
+
+      if (body.errors?.length) {
+        printWarning(body.errors.length + ' errors during sync:');
+        body.errors.forEach((e: string) => printError(e));
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -98,6 +90,8 @@ const program = new Command('sync')
         printError('Could not reach ' + o.target + '. Is the Forge instance running?');
       } else if (msg.includes('401') || msg.includes('Unauthorized')) {
         printError('Authentication failed. Check your API key.');
+      } else if (msg.includes('403') || msg.includes('Forbidden')) {
+        printError('Access denied. Your API key does not have admin permissions.');
       } else {
         printError('Sync failed: ' + msg);
       }

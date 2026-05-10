@@ -15,6 +15,20 @@ const MCP_SYSTEMD_UNIT = 'hermes-forge-mcp.service';
 const DEFAULT_MCP_PORT = 8641;
 const MCP_PROJECT_DIR = '/home/ubuntu/projects/hermes-forge-mcp';
 
+/** Checks if MCP HTTP server is reachable (non-systemd fallback). */
+async function isMcpHttpReachable(port?: number): Promise<boolean> {
+  const url = getMcpBaseUrl(port);
+  try {
+    const response = await fetch(`${url}/health`, {
+      method: 'GET',
+      signal: AbortSignal.timeout(2000),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 export function getMcpRegistryPath(): string {
   return MCP_PROJECT_DIR;
 }
@@ -36,13 +50,15 @@ export async function isMcpRegistryInstalled(): Promise<boolean> {
   }
 }
 
-export async function isMcpRunning(_port?: number): Promise<boolean> {
+export async function isMcpRunning(port?: number): Promise<boolean> {
+  // Try systemd first
   try {
     const { stdout } = await execa('systemctl', ['is-active', MCP_SYSTEMD_UNIT]);
-    return stdout.trim() === 'active';
+    if (stdout.trim() === 'active') return true;
   } catch {
-    return false;
+    // systemd not available — fallback to HTTP health check
   }
+  return isMcpHttpReachable(port);
 }
 
 export interface McpStartResult {

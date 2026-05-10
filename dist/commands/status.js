@@ -1,15 +1,98 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
+import { execa } from 'execa';
 import { checkMultipleHealth } from '../lib/healthCheck.js';
 import { detectWsl } from '../lib/wslDetector.js';
 import { printHeader, printInfo, printWarning, printSuccess, printError } from '../lib/output.js';
 import { config } from '../lib/configManager.js';
+import { detectEnvironment } from '../lib/envDetector.js';
 import { getAllLocks, isLockValid, clearStaleLocks } from '../lib/lockManager.js';
+// ── Systemd service discovery ────────────────────────────────────────────
+const FORGE_SERVICES = ['forge-web', 'forge-api', 'forge-docs', 'forge-mcp'];
+/** Parse `systemctl show` key=value output into a map. */
+function parseSystemctlShow(stdout) {
+    const map = {};
+    for (const line of stdout.split('\n')) {
+        const idx = line.indexOf('=');
+        if (idx === -1)
+            continue;
+        map[line.slice(0, idx)] = line.slice(idx + 1);
+    }
+    return map;
+}
+/** Calculate human-readable uptime from an ActiveEnterTimestamp. */
+function calcUptime(ts) {
+    // systemd timestamps look like: "Mon 2026-05-10 12:00:00 UTC"
+    const start = new Date(ts);
+    if (isNaN(start.getTime()))
+        return 'unknown';
+    const diff = Date.now() - start.getTime();
+    const mins = Math.floor(diff / 60_000);
+    if (mins < 60)
+        return `${mins}m`;
+    const hours = Math.floor(mins / 60);
+    const remMins = mins % 60;
+    if (hours < 24)
+        return `${hours}h ${remMins}m`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ${hours % 24}h`;
+}
+/** Fetch systemd properties for a single unit. */
+async function getSystemdServiceInfo(unit) {
+    try {
+        const { stdout } = await execa('systemctl', ['show', unit, '--property=ActiveState,SubState,MainPID,ActiveEnterTimestamp,MemoryCurrent,NRestarts,LoadState,Description'], { reject: false, timeout: 10_000 });
+        if (!stdout)
+            return null;
+        const props = parseSystemctlShow(stdout);
+        if (!props.ActiveState)
+            return null;
+        return {
+            unit,
+            activeState: props.ActiveState ?? 'unknown',
+            subState: props.SubState ?? 'unknown',
+            pid: parseInt(props.MainPID ?? '0', 10),
+            uptime: calcUptime(props.ActiveEnterTimestamp ?? ''),
+            memory: props.MemoryCurrent ?? 'N/A',
+            restarts: parseInt(props.NRestarts ?? '0', 10),
+            loadState: props.LoadState ?? 'unknown',
+            description: props.Description ?? unit,
+        };
+    }
+    catch {
+        return null;
+    }
+}
+async function checkHealthEndpoints() {
+    const cfg = config.get();
+    const urls = [
+        { key: 'web', url: `http://127.0.0.1:${cfg.ports.web}` },
+        { key: 'api', url: `http://127.0.0.1:${cfg.ports.api}/health` },
+        { key: 'docs', url: `http://127.0.0.1:${cfg.ports.docs}` },
+        { key: 'mcp', url: `http://127.0.0.1:${cfg.ports.mcp}/health` },
+    ];
+    const results = [];
+    for (const ep of urls) {
+        const start = Date.now();
+        try {
+            const res = await fetch(ep.url, { method: 'GET', signal: AbortSignal.timeout(5_000) });
+            results.push({
+                url: ep.url,
+                status: res.ok ? 'up' : 'down',
+                responseTime: Date.now() - start,
+            });
+        }
+        catch {
+            results.push({ url: ep.url, status: 'down' });
+        }
+    }
+    return results;
+}
 const program = new Command('status')
     .description('Show status of all Forge services')
     .option('--watch', 'watch mode - refresh every 5 seconds')
     .option('--json', 'output as JSON')
     .option('--clear-locks', 'clear stale lock files for dead processes')
+    .option('--systemd', 'show system-level service status (systemd units) on production VPS')
     .action(async (options) => {
     const cfg = config.get();
     // Handle --clear-locks flag
@@ -23,6 +106,122 @@ const program = new Command('status')
             printInfo('No stale locks found.');
         }
         console.log('');
+    }
+    // ── Handle --systemd flag ──────────────────────────────────────────
+    if (options.systemd) {
+        const env = await detectEnvironment();
+        if (!env.hasSystemd) {
+            printHeader('Forge Status (systemd)');
+            printError('systemd is not available on this machine.');
+            printInfo('This flag is for production VPS where Forge runs as systemd services.');
+            printInfo('');
+            printInfo('  • Run without --systemd for lock-file-based status:');
+            printInfo('    forge status');
+            printInfo('  • To set up Forge services on this machine, see:');
+            printInfo('    forge deploy or the Forge admin guide.');
+            return;
+        }
+        if (!env.hasForgeServices) {
+            printHeader('Forge Status (systemd)');
+            printWarning('Forge systemd services not detected on this host.');
+            printInfo('No forge-* service units are registered with systemd.');
+            printInfo('');
+            printInfo('  • Run without --systemd for lock-file-based status:');
+            printInfo('    forge status');
+            printInfo('  • Deploy Forge services first:');
+            printInfo('    forge deploy');
+            return;
+        }
+        // Gather systemd info for all forge services
+        const serviceInfos = await Promise.all(FORGE_SERVICES.map(unit => getSystemdServiceInfo(unit)));
+        // Gather health endpoint results
+        const healthResults = await checkHealthEndpoints();
+        // JSON mode
+        if (options.json) {
+            const jsonOutput = FORGE_SERVICES.map((unit, i) => {
+                const svc = serviceInfos[i];
+                const health = healthResults[i] ?? { url: '', status: 'down' };
+                return {
+                    unit,
+                    description: svc?.description ?? 'not found',
+                    activeState: svc?.activeState ?? 'not-found',
+                    subState: svc?.subState ?? '',
+                    loadState: svc?.loadState ?? 'not-found',
+                    pid: svc?.pid ?? 0,
+                    uptime: svc?.uptime ?? 'N/A',
+                    memory: svc?.memory ?? 'N/A',
+                    restarts: svc?.restarts ?? 0,
+                    healthEndpoint: health.status,
+                    healthResponseTime: health.responseTime ?? null,
+                };
+            });
+            console.log(JSON.stringify({
+                mode: 'systemd',
+                services: jsonOutput,
+                hostname: env.hostname,
+                timestamp: new Date().toISOString(),
+            }, null, 2));
+            return;
+        }
+        // Terminal output
+        printHeader('Forge Status (systemd)');
+        console.log(`  ${chalk.gray('Host:')} ${env.hostname}`);
+        console.log('');
+        const { default: Table } = await import('cli-table3');
+        const table = new Table({
+            head: [
+                chalk.bold('Service'),
+                chalk.bold('Status'),
+                chalk.bold('PID'),
+                chalk.bold('Uptime'),
+                chalk.bold('Memory'),
+                chalk.bold('Restarts'),
+                chalk.bold('Health'),
+            ],
+            colWidths: [18, 14, 8, 14, 14, 10, 10],
+            style: { head: ['cyan'] },
+        });
+        for (let i = 0; i < FORGE_SERVICES.length; i++) {
+            const svc = serviceInfos[i];
+            const health = healthResults[i];
+            if (!svc) {
+                table.push([
+                    FORGE_SERVICES[i],
+                    chalk.gray('not found'),
+                    '-',
+                    '-',
+                    '-',
+                    '-',
+                    chalk.gray('-'),
+                ]);
+                continue;
+            }
+            const statusColor = svc.activeState === 'active'
+                ? chalk.green(svc.activeState)
+                : svc.activeState === 'inactive'
+                    ? chalk.gray(svc.activeState)
+                    : chalk.red(svc.activeState);
+            const pidStr = svc.pid > 0 ? String(svc.pid) : chalk.gray('-');
+            const memStr = svc.memory !== 'N/A' ? svc.memory : chalk.gray('-');
+            const healthStr = health
+                ? health.status === 'up'
+                    ? chalk.green('✓') + (health.responseTime ? ` ${health.responseTime}ms` : '')
+                    : chalk.red('✗')
+                : chalk.gray('-');
+            table.push([
+                svc.unit.replace('forge-', ''),
+                statusColor,
+                pidStr,
+                svc.uptime,
+                memStr,
+                String(svc.restarts),
+                healthStr,
+            ]);
+        }
+        console.log(table.toString());
+        console.log('');
+        printInfo(`Forge systemd services: ${serviceInfos.filter(Boolean).length}/${FORGE_SERVICES.length} units found`);
+        return;
     }
     const services = [
         { key: 'web', name: 'Web (Vite)', port: cfg.ports.web, url: `http://127.0.0.1:${cfg.ports.web}` },
@@ -168,6 +367,15 @@ const program = new Command('status')
         console.log('');
         printInfo(`WSL2 detected. Host IP: ${wsl.hostIp || 'auto-detected'}`);
         printInfo('Use http://127.0.0.1:<port> or the host IP from Windows browser.');
+    }
+    // ── Production environment hint ────────────────────────────────────
+    if (!options.systemd) {
+        const env = await detectEnvironment();
+        if (env.hasSystemd && env.hasForgeServices) {
+            console.log('');
+            printInfo('Production (systemd) environment detected.');
+            printInfo('Tip: use forge status --systemd for system-level service status.');
+        }
     }
     if (options.watch) {
         console.log('\n' + chalk.gray('Watch mode — refreshing every 5 s. Ctrl+C to stop.'));

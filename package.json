@@ -1,6 +1,6 @@
 {
   "name": "@hermes-forge/cli",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Official CLI for Hermes Forge Platform - dev, status, pack management, MCP, and doctor",
   "type": "module",
   "bin": {

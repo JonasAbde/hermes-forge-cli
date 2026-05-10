@@ -1,0 +1,59 @@
+{
+  "version": "1.0",
+  "packs": [
+    {
+      "pack_id": "forge.test.alpha",
+      "name": "Alpha Test Pack",
+      "version": "1.0.0",
+      "description": "A test pack for CLI validation",
+      "author": "Forge CLI Test",
+      "card_name": "Alpha",
+      "card_title": "Test pack alpha",
+      "card_theme": "test · alpha",
+      "card_snippet": "CLI test fixture pack",
+      "status": "published",
+      "entrypoint": "forge.test.alpha.main",
+      "requirements_json": [],
+      "capabilities_json": ["test"],
+      "skills": ["test:alpha"],
+      "tags": ["test", "alpha"],
+      "category": "testing"
+    },
+    {
+      "pack_id": "forge.test.beta",
+      "name": "Beta Test Pack",
+      "version": "2.0.0",
+      "description": "Another test pack for CLI validation",
+      "author": "Forge CLI Test",
+      "card_name": "Beta",
+      "card_title": "Test pack beta",
+      "card_theme": "test · beta",
+      "card_snippet": "Second CLI test fixture pack",
+      "status": "published",
+      "entrypoint": "forge.test.beta.main",
+      "requirements_json": [],
+      "capabilities_json": ["test"],
+      "skills": ["test:beta"],
+      "tags": ["test", "beta"],
+      "category": "testing"
+    },
+    {
+      "pack_id": "forge.test.gamma",
+      "name": "Gamma Test Pack",
+      "version": "0.5.0",
+      "description": "A draft pack for CLI validation",
+      "author": "Forge CLI Test",
+      "card_name": "Gamma",
+      "card_title": "Test pack gamma",
+      "card_theme": "test · gamma",
+      "card_snippet": "Third CLI test fixture pack (draft)",
+      "status": "draft",
+      "entrypoint": "forge.test.gamma.main",
+      "requirements_json": ["forge.test.alpha"],
+      "capabilities_json": ["test"],
+      "skills": ["test:gamma"],
+      "tags": ["test", "gamma", "draft"],
+      "category": "testing"
+    }
+  ]
+}

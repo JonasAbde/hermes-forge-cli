@@ -209,7 +209,7 @@ describe('Phase B: CLI improvements', () => {
   describe('pack commands with FORGE_REPO_ROOT', () => {
     const repoRoot = join(process.cwd(), '..').includes('hermes-forge-platform')
       ? join(process.cwd(), '..')
-      : process.cwd(); // already at root when running from workspace
+      : join(__dirname, 'fixtures');
 
     it('pack list exits 0 with FORGE_REPO_ROOT', async () => {
       const result = await runForge(['pack', 'list'], { env: { FORGE_REPO_ROOT: repoRoot } });

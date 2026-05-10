@@ -1,6 +1,8 @@
-# @hermes-forge/cli
+# Forge CLI
 
-Official CLI for Hermes Forge Platform — unified development, pack management, and deployment tooling.
+CLI tooling for the Forge Platform — development, pack management, and deployment.
+
+Package: `@hermes-forge/cli`
 
 ## Installation
 
@@ -32,24 +34,20 @@ forge remote me
 
 Manage your connection to `forge.tekup.dk`:
 
-| Command | Description |
-|---------|-------------|
-| `forge remote status` | Show remote forge status and health |
-| `forge remote login` | Authenticate with the remote forge |
-| `forge remote me` | Show your authenticated profile |
-| `forge remote packs` | List packs available on the remote forge |
+- `forge remote status` — Show remote forge status and health
+- `forge remote login` — Authenticate with the remote forge
+- `forge remote me` — Show your authenticated profile
+- `forge remote packs` — List packs available on the remote forge
 
 ## Deploy Commands
 
 Deploy agent packs to the remote forge instance:
 
-| Command | Description |
-|---------|-------------|
-| `forge deploy list` | List all deployments |
-| `forge deploy create <name> <pack-ids...>` | Create a new deployment |
-| `forge deploy start <id>` | Start a deployment |
-| `forge deploy stop <id>` | Stop a deployment |
-| `forge deploy delete <id>` | Delete a deployment |
+- `forge deploy list` — List all deployments
+- `forge deploy create <name> <pack-ids...>` — Create a new deployment
+- `forge deploy start <id>` — Start a deployment
+- `forge deploy stop <id>` — Stop a deployment
+- `forge deploy delete <id>` — Delete a deployment
 
 Status colors: **green** = running, **gray** = stopped, **red** = error.
 
@@ -57,40 +55,38 @@ Status colors: **green** = running, **gray** = stopped, **red** = error.
 
 Manage and build Agent Packs locally:
 
-| Command | Description |
-|---------|-------------|
-| `forge pack list` | List local packs (supports `--catalog`, `--theme`, `--json`) |
-| `forge pack validate` | Validate pack schema (supports `--strict`) |
-| `forge pack build` | Build pack metadata and cutouts (supports `--watch`, `--out`) |
-| `forge pack metadata` | Generate compact metadata for MCP (supports `--catalog`, `--out`, `--format`) |
-| `forge pack sync` | Sync local packs with remote forge (supports `--dry-run`, `--target`, `--api-key`) |
+- `forge pack list` — List local packs (supports `--catalog`, `--theme`, `--json`)
+- `forge pack validate` — Validate pack schema (supports `--strict`)
+- `forge pack build` — Build pack metadata and cutouts (supports `--watch`, `--out`)
+- `forge pack metadata` — Generate compact metadata for MCP (supports `--catalog`, `--out`, `--format`)
+- `forge pack sync` — Sync local packs with remote forge (supports `--dry-run`, `--target`, `--api-key`)
+
+> **Note:** `forge pack sync` sends packs to the remote forge API endpoint. If the backend endpoint returns a 404, the remote server may not have the sync endpoint deployed yet. Check [forge.tekup.dk/status](https://forge.tekup.dk/status) for updates. The `--dry-run` flag shows what would be sent without making any changes.
 
 ## Core Commands
 
-| Command | Description |
-|---------|-------------|
-| `forge status [--watch] [--json]` | Overview of all services |
-| `forge doctor [--strict] [--quick] [--deep] [--json]` | Run system diagnostics |
-| `forge dev [--with-docs] [--only-api] [--only-web] [--only-docs]` | Start development services |
-| `forge docs [--open] [--no-open]` | Start Forge Docs (VitePress) |
-| `forge open <target>` | Open a Forge URL in browser (targets: docs, hub, showcase, catalog, chat, api) |
-| `forge config [get|set|reset]` | Manage CLI configuration |
-| `forge env [use|list|validate|diff|show]` | Manage environment configurations |
-| `forge logs [--follow] [--lines] [--level]` | View service logs |
-| `forge monitor` | Real-time monitoring dashboard |
-| `forge init [pack|web-extension|mcp-tool]` | Initialize a new project |
-| `forge mcp [start|stop|status|test|tools]` | Manage MCP Registry server |
-| `forge plugin [list|search|install|uninstall|update]` | Manage plugins |
-| `forge completion <bash|zsh|fish>` | Generate shell completion scripts |
-| `forge alias [list|set|remove|show|run|init]` | Manage command aliases |
-| `forge backup [create|restore|list|delete|auto]` | Backup and restore data |
-| `forge upgrade [--check] [--force]` | Upgrade Forge CLI |
-| `forge schedule [add|list|remove|run|logs|search]` | Manage scheduled tasks |
-| `forge notify [send|config|setup|test]` | Manage notifications |
-| `forge workspace [list|create|switch|info|detect|init]` | Manage workspaces |
-| `forge interactive` | Interactive guided mode |
-| `forge version` | Output the current version |
-| `forge help [command]` | Display help |
+- `forge status [--watch] [--json]` — Overview of all services
+- `forge doctor [--strict] [--quick] [--deep] [--json]` — Run system diagnostics
+- `forge dev [--with-docs] [--only-api] [--only-web] [--only-docs]` — Start development services
+- `forge docs [--open] [--no-open]` — Start Forge Docs (VitePress)
+- `forge open <target>` — Open a Forge URL in browser (targets: docs, hub, showcase, catalog, chat, api)
+- `forge config [get|set|reset]` — Manage CLI configuration
+- `forge env [use|list|validate|diff|show]` — Manage environment configurations
+- `forge logs [--follow] [--lines] [--level]` — View service logs
+- `forge monitor` — Real-time monitoring dashboard
+- `forge init [pack|web-extension|mcp-tool]` — Initialize a new project
+- `forge mcp [start|stop|status|test|tools]` — Manage MCP Registry server
+- `forge plugin [list|search|install|uninstall|update]` — Manage plugins
+- `forge completion <bash|zsh|fish>` — Generate shell completion scripts
+- `forge alias [list|set|remove|show|run|init]` — Manage command aliases
+- `forge backup [create|restore|list|delete|auto]` — Backup and restore data
+- `forge upgrade [--check] [--force]` — Upgrade Forge CLI
+- `forge schedule [add|list|remove|run|logs|search]` — Manage scheduled tasks
+- `forge notify [send|config|setup|test]` — Manage notifications
+- `forge workspace [list|create|switch|info|detect|init]` — Manage workspaces
+- `forge interactive` — Interactive guided mode
+- `forge version` — Output the current version
+- `forge help [command]` — Display help
 
 ## Shell Completion
 

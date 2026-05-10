@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 import chalk from 'chalk';
+import { readFileSync } from 'node:fs';
 import { printHeader } from './lib/output.js';
+
+const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const program = new Command();
-program.name('forge').description('Forge CLI — unified development, pack management, and MCP tools').version('0.1.0').option('--verbose', 'enable verbose output').showHelpAfterError();
+program.name('forge').description('Forge CLI — unified development, pack management, and MCP tools').version(pkg.version).option('--verbose', 'enable verbose output').showHelpAfterError();
 import statusCommand from './commands/status.js';
 import doctorCommand from './commands/doctor.js';
 import devCommand from './commands/dev.js';
@@ -30,6 +33,6 @@ import deployCommand from './commands/deploy.js';
 program.addCommand(statusCommand).addCommand(doctorCommand).addCommand(devCommand).addCommand(docsCommand).addCommand(openCommand).addCommand(packCommand).addCommand(mcpCommand).addCommand(configCommand).addCommand(envCommand).addCommand(logsCommand).addCommand(monitorCommand).addCommand(initCommand).addCommand(pluginCommand).addCommand(completionCommand).addCommand(aliasCommand).addCommand(backupCommand).addCommand(upgradeCommand).addCommand(scheduleCommand).addCommand(notifyCommand).addCommand(workspaceCommand).addCommand(interactiveCommand).addCommand(remoteCommand).addCommand(deployCommand)
   .command('version')
   .description('Output the current version')
-  .action(() => { console.log('0.1.0'); });
+  .action(() => { console.log(pkg.version); });
 program.parse(process.argv);
 if (!process.argv.slice(2).length) { printHeader('Forge CLI'); program.outputHelp(); console.log('\n' + chalk.cyan('Run "forge --help" for detailed command information.')); }

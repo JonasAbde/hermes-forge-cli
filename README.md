@@ -106,6 +106,12 @@ forge completion fish | source
 forge completion fish --install
 ```
 
+## Documentation
+
+- **[CLI Auth Flow](docs/CLI_AUTH_FLOW.md)** — How authentication works, setting API keys, troubleshooting
+- **[Pack Sync Contract](docs/CLI_PACK_SYNC_CONTRACT.md)** — Backend API contract for `forge pack sync`
+- **[Release Checklist](docs/FORGE_CLI_RELEASE_CHECKLIST.md)** — v1 release procedure and npm publish steps
+
 ## Troubleshooting
 
 **Connection issues:**

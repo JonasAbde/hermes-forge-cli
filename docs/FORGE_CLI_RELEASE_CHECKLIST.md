@@ -108,24 +108,59 @@ npm access list packages @hermes-forge/cli
 - [ ] Screenshots/asciinema in README (optional but recommended)
 - [ ] Changelog exists or is started
 
+## npm Setup (First Time)
+
+Before the first publish, create the npm org and gain access:
+
+```bash
+# 1. Login to npm (requires npm account)
+npm login
+# Follow prompts for username, password, OTP
+
+# 2. Verify login
+npm whoami
+# → should show your npm username
+
+# 3. Create the @hermes-forge org (if not already created)
+npm org create @hermes-forge <your-username>
+# You'll need an npm paid org account for private packages,
+# or use --access public for public packages
+
+# 4. Verify org access
+npm access list packages @hermes-forge/cli
+
+# 5. Dry-run before actual publish
+npm publish --dry-run
+# Verify: files list, bin paths, dependencies
+```
+
 ## Release Procedure
 
 ```bash
-# 1. On main branch
+# 1. On main branch, confirm everything is green
 git checkout main
 git pull origin main
-
-# 2. Run final checks
 cd cli
-npm run build
-npm test
 
-# 3. Publish
+# 2. Final checks
+npm run build
+npm test                 # 133+ tests should pass
+
+# 3. Verify version
+node -e "console.log(require('./package.json').version)"
+# → should show 1.0.0
+
+# 4. Publish to npm
 npm publish --access public
 
-# 4. Tag release
+# 5. Tag the release
 git tag -a v1.0.0 -m "Forge CLI v1.0.0"
 git push origin v1.0.0
+
+# 6. Verify published package
+npm view @hermes-forge/cli
+npm install -g @hermes-forge/cli
+forge --version
 ```
 
 ## Rollback
@@ -153,11 +188,11 @@ npm deprecate @hermes-forge/cli@1.0.0 "contains bug X — use 1.0.1 instead"
 npm install @hermes-forge/cli@0.1.0
 ```
 
-## npm Blockers (Current)
+## npm Blockers (Current) — All Resolved
 
 | Blocker | Status | Notes |
 |---------|--------|-------|
-| Version at `0.1.0` | ⏳ Not bumped | Bump to `1.0.0` before publish |
-| npm access | ❓ Untested | Need `npm whoami` + org access |
-| `forge pack sync` backend | ❌ Missing | CLI handles gracefully, documented |
-| CI pipeline | ❓ Not set up | Manual only currently |
+| Version bumped to `1.0.0` | ✅ Done | `cli/package.json` → 1.0.0 |
+| npm access | ⏳ Requires `npm login` + org create | Steps documented above |
+| `forge pack sync` backend endpoint | 🆕 Issue #174 | Backend task — CLI handles gracefully |
+| CI pipeline | ✅ Already set up | `forge-cli-check` job in `.github/workflows/ci.yml` |

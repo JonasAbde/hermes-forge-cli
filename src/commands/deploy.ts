@@ -1,11 +1,13 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
+import { execa } from 'execa';
 import { ForgeApiClient } from '../lib/forgeApiClient.js';
 import { printHeader, printSuccess, printError, printInfo } from '../lib/output.js';
 import { config } from '../lib/configManager.js';
+import { detectEnvironment } from '../lib/envDetector.js';
 import Table from 'cli-table3';
 
-const p = new Command('deploy').description('Manage agent deployments on forge.tekup.dk');
+const p = new Command('deploy').description('Manage agent & infra deployments');
 
 const listCmd = new Command('list').description('List all deployments').option('--json', 'output as JSON')
   .action(async (o) => {
@@ -39,5 +41,67 @@ const stopCmd = new Command('stop').description('Stop a deployment').argument('<
 const deleteCmd = new Command('delete').description('Delete a deployment').argument('<id>')
   .action(async (id: string) => { const cfg = config.get(); const client = new ForgeApiClient({ baseUrl: cfg.remote?.baseUrl, apiKey: cfg.remote?.apiKey }); try { await client.deleteDeployment(id); printSuccess('Deployment ' + id + ' deleted'); } catch (err) { printError('Failed: ' + (err instanceof Error ? err.message : String(err))); } });
 
-p.addCommand(listCmd).addCommand(createCmd).addCommand(startCmd).addCommand(stopCmd).addCommand(deleteCmd);
+// ── Infra subcommand ──────────────────────────────────────────
+const INFRA_TARGETS = ['platform', 'mcp'] as const;
+type InfraTarget = (typeof INFRA_TARGETS)[number];
+
+const infraCmd = new Command('infra').description('Deploy Forge platform or MCP server infrastructure').argument('<target>', `deployment target: ${INFRA_TARGETS.join(' | ')}`)
+  .option('--json', 'output as JSON')
+  .action(async (target: string, opts: { json?: boolean }) => {
+    if (!INFRA_TARGETS.includes(target as InfraTarget)) {
+      printError(`Unknown target "${target}". Valid targets: ${INFRA_TARGETS.join(', ')}`);
+      if (opts.json) console.log(JSON.stringify({ success: false, error: `Unknown target "${target}"` }));
+      process.exit(1);
+    }
+
+    const env = await detectEnvironment();
+    if (env.environment !== 'production') {
+      const msg = `Not in production environment (detected: ${env.environment}). Infra deploy requires a production forge server.`;
+      printError(msg);
+      if (opts.json) console.log(JSON.stringify({ success: false, error: msg }));
+      process.exit(1);
+    }
+
+    const steps: { label: string; cmd: string[]; cwd?: string }[] = [];
+
+    if (target === 'platform') {
+      printHeader('Deploying Forge Platform');
+      steps.push(
+        { label: 'Building platform', cmd: ['npm', 'run', 'build'], cwd: '/home/ubuntu/projects/hermes-forge-platform' },
+        { label: 'Rsyncing web dist', cmd: ['rsync', '-a', 'web/dist/', '/var/www/hermes-forge/'], cwd: '/home/ubuntu/projects/hermes-forge-platform' },
+        { label: 'Testing nginx config', cmd: ['nginx', '-t'] },
+        { label: 'Reloading nginx', cmd: ['systemctl', 'reload', 'nginx'] },
+      );
+    } else {
+      printHeader('Deploying Forge MCP');
+      steps.push(
+        { label: 'Building MCP server', cmd: ['npm', 'run', 'build'], cwd: '/home/ubuntu/projects/hermes-forge-mcp' },
+        { label: 'Restarting MCP service', cmd: ['systemctl', 'restart', 'hermes-forge-mcp'] },
+      );
+    }
+
+    const results: { step: string; ok: boolean; output?: string }[] = [];
+
+    for (const step of steps) {
+      printInfo(step.label + '...');
+      try {
+        const { stdout, stderr } = await execa(step.cmd[0], step.cmd.slice(1), { cwd: step.cwd, reject: true });
+        const output = (stdout + stderr).trim();
+        printSuccess(step.label + ' — OK');
+        results.push({ step: step.label, ok: true, output: output.length ? output : undefined });
+      } catch (err: any) {
+        const msg = err?.stderr || err?.message || String(err);
+        printError(step.label + ' — FAILED');
+        printError(msg);
+        results.push({ step: step.label, ok: false, output: msg });
+        if (opts.json) console.log(JSON.stringify({ success: false, results }));
+        process.exit(1);
+      }
+    }
+
+    printSuccess(`Forge ${target} deployed successfully`);
+    if (opts.json) console.log(JSON.stringify({ success: true, target, results }));
+  });
+
+p.addCommand(listCmd).addCommand(createCmd).addCommand(startCmd).addCommand(stopCmd).addCommand(deleteCmd).addCommand(infraCmd);
 export default p;

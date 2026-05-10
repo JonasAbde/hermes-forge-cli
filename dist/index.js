@@ -29,7 +29,8 @@ import workspaceCommand from './commands/workspace.js';
 import interactiveCommand from './commands/interactive.js';
 import remoteCommand from './commands/remote/index.js';
 import deployCommand from './commands/deploy.js';
-program.addCommand(statusCommand).addCommand(doctorCommand).addCommand(devCommand).addCommand(docsCommand).addCommand(openCommand).addCommand(packCommand).addCommand(mcpCommand).addCommand(configCommand).addCommand(envCommand).addCommand(logsCommand).addCommand(monitorCommand).addCommand(initCommand).addCommand(pluginCommand).addCommand(completionCommand).addCommand(aliasCommand).addCommand(backupCommand).addCommand(upgradeCommand).addCommand(scheduleCommand).addCommand(notifyCommand).addCommand(workspaceCommand).addCommand(interactiveCommand).addCommand(remoteCommand).addCommand(deployCommand)
+import healthCommand from './commands/health.js';
+program.addCommand(statusCommand).addCommand(doctorCommand).addCommand(devCommand).addCommand(docsCommand).addCommand(openCommand).addCommand(packCommand).addCommand(mcpCommand).addCommand(configCommand).addCommand(envCommand).addCommand(logsCommand).addCommand(monitorCommand).addCommand(initCommand).addCommand(pluginCommand).addCommand(completionCommand).addCommand(aliasCommand).addCommand(backupCommand).addCommand(upgradeCommand).addCommand(scheduleCommand).addCommand(notifyCommand).addCommand(workspaceCommand).addCommand(interactiveCommand).addCommand(remoteCommand).addCommand(deployCommand).addCommand(healthCommand)
     .command('version')
     .description('Output the current version')
     .action(() => { console.log(pkg.version); });

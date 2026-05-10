@@ -1,1 +1,1 @@
-{"version":3,"file":"status.d.ts","sourceRoot":"","sources":["../../../src/commands/mcp/status.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,MAAM,WAAW,CAAC;AAKpC,QAAA,MAAM,OAAO,SAqDT,CAAC;AAEL,eAAe,OAAO,CAAC"}
+{"version":3,"file":"status.d.ts","sourceRoot":"","sources":["../../../src/commands/mcp/status.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,MAAM,WAAW,CAAC;AAKpC,QAAA,MAAM,OAAO,SA2DT,CAAC;AAEL,eAAe,OAAO,CAAC"}

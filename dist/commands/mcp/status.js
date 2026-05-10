@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { getMcpStatus, getMcpDefaultPort } from '../../lib/mcpManager.js';
-import { printHeader, printSuccess, printError, printInfo } from '../../lib/output.js';
+import { printHeader, printSuccess, printError, printInfo, printWarning } from '../../lib/output.js';
 const program = new Command('status')
     .description('Show MCP registry status')
     .option('-p, --port <number>', 'port to check', String(getMcpDefaultPort()))
@@ -38,11 +38,17 @@ const program = new Command('status')
     }
     table.push(['Tools', status.tools.length.toString()]);
     console.log(table.toString());
+    if (status.toolsError) {
+        printWarning(`\\nTool discovery: ${status.toolsError}`);
+    }
     if (status.tools.length > 0) {
-        console.log('\n' + chalk.bold('Available Tools:'));
+        console.log('\\n' + chalk.bold('Available Tools:'));
         status.tools.forEach(tool => {
             console.log(`  ${chalk.cyan('•')} ${tool}`);
         });
+    }
+    else if (!status.toolsError) {
+        printWarning('\\nNo tools available on the MCP server');
     }
 });
 export default program;

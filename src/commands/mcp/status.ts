@@ -50,11 +50,17 @@ const program = new Command('status')
     
     console.log(table.toString());
     
+    if (status.toolsError) {
+      printWarning(`\\nTool discovery: ${status.toolsError}`);
+    }
+    
     if (status.tools.length > 0) {
-      console.log('\n' + chalk.bold('Available Tools:'));
+      console.log('\\n' + chalk.bold('Available Tools:'));
       status.tools.forEach(tool => {
         console.log(`  ${chalk.cyan('•')} ${tool}`);
       });
+    } else if (!status.toolsError) {
+      printWarning('\\nNo tools available on the MCP server');
     }
   });
 

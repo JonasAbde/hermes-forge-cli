@@ -1,56 +1,48 @@
-import { execa } from 'execa';
-import { join } from 'path';
-import { access } from 'fs/promises';
+import { execa, execaSync } from 'execa';
 import { config } from './configManager.js';
-import { 
-  acquireLock, 
-  releaseLock, 
-  isLockValid, 
+import {
+  acquireLock,
+  releaseLock,
+  isLockValid,
   getLock,
-  type LockInfo 
+  type LockInfo
 } from './lockManager.js';
 import { createLogger } from './logger.js';
 import { checkHealth } from './healthCheck.js';
 
-const MCP_SERVICE_NAME = 'mcp';
+const MCP_SERVICE_NAME = 'forge-mcp';
+const MCP_SYSTEMD_UNIT = 'hermes-forge-mcp.service';
+const DEFAULT_MCP_PORT = 8641;
+const MCP_PROJECT_DIR = '/home/ubuntu/projects/hermes-forge-mcp';
 
 export function getMcpRegistryPath(): string {
-  return join(process.cwd(), 'integrations', 'mcp-forge-registry');
+  return MCP_PROJECT_DIR;
 }
 
 export function getMcpDefaultPort(): number {
-  return config.get().ports.mcp;
+  return DEFAULT_MCP_PORT;
 }
 
 export function getMcpBaseUrl(port?: number): string {
   return `http://127.0.0.1:${port || getMcpDefaultPort()}`;
 }
 
-export function getMcpPythonRuntime(): string {
-  return config.get().mcpRegistry?.pythonRuntime || 'uv';
-}
-
 export async function isMcpRegistryInstalled(): Promise<boolean> {
   try {
-    const registryPath = getMcpRegistryPath();
-    await access(join(registryPath, 'pyproject.toml'));
-    return true;
+    const { stdout } = await execa('systemctl', ['is-enabled', MCP_SYSTEMD_UNIT]);
+    return stdout.trim() === 'enabled';
   } catch {
     return false;
   }
 }
 
-export async function isMcpRunning(port?: number): Promise<boolean> {
-  // Check lock first
-  const hasLock = await isLockValid(MCP_SERVICE_NAME);
-  if (!hasLock) {
+export async function isMcpRunning(_port?: number): Promise<boolean> {
+  try {
+    const { stdout } = await execa('systemctl', ['is-active', MCP_SYSTEMD_UNIT]);
+    return stdout.trim() === 'active';
+  } catch {
     return false;
   }
-  
-  // Then check health
-  const url = getMcpBaseUrl(port);
-  const health = await checkHealth(`${url}/health`);
-  return health.status === 'up';
 }
 
 export interface McpStartResult {
@@ -61,121 +53,81 @@ export interface McpStartResult {
 
 export async function startMcpRegistry(port?: number): Promise<McpStartResult> {
   const actualPort = port || getMcpDefaultPort();
-  const runtime = getMcpPythonRuntime();
-  const registryPath = getMcpRegistryPath();
+  const url = getMcpBaseUrl(actualPort);
   const logger = createLogger('mcp');
-  
+
   // Check if already running
   const running = await isMcpRunning(actualPort);
   if (running) {
-    const lock = await getLock(MCP_SERVICE_NAME);
-    throw new Error(`MCP registry already running (PID ${lock?.pid || 'unknown'})`);
+    throw new Error(`MCP server already running on port ${actualPort}`);
   }
-  
-  // Build command based on runtime
-  let command: string;
-  let args: string[];
-  
-  if (runtime === 'uv') {
-    command = 'uv';
-    args = ['run', 'python', '-m', 'forge_mcp_registry'];
-  } else {
-    command = runtime; // python3 or python
-    args = ['-m', 'forge_mcp_registry'];
-  }
-  
-  // Spawn the process
-  const childProcess = execa(command, args, {
-    cwd: registryPath,
-    detached: false,
-    env: {
-      ...process.env,
-      FORGE_MCP_PORT: actualPort.toString()
-    }
-  });
-  
-  if (!childProcess.pid) {
-    throw new Error('Failed to start MCP registry: no PID');
-  }
-  
-  // Acquire lock
-  await acquireLock(MCP_SERVICE_NAME, childProcess.pid, actualPort, `${command} ${args.join(' ')}`);
-  
+
+  // Start via systemd
+  await execa('sudo', ['systemctl', 'start', MCP_SYSTEMD_UNIT]);
+
   // Wait for health check (up to 10 seconds)
-  const url = getMcpBaseUrl(actualPort);
   let healthy = false;
+  let pid = 0;
   for (let i = 0; i < 20; i++) {
     await new Promise(r => setTimeout(r, 500));
     const health = await checkHealth(`${url}/health`);
     if (health.status === 'up') {
       healthy = true;
+      // Get PID from systemd
+      try {
+        const { stdout } = await execa('systemctl', ['show', '--property=MainPID', '--value', MCP_SYSTEMD_UNIT]);
+        pid = parseInt(stdout.trim(), 10);
+      } catch { /* ignore */ }
       break;
     }
   }
-  
+
   if (!healthy) {
-    // Clean up on failure
-    childProcess.kill();
-    await releaseLock(MCP_SERVICE_NAME);
-    throw new Error('MCP registry failed to start: health check timeout');
+    throw new Error('MCP server failed to start via systemd: health check timeout');
   }
-  
-  await logger.info(`MCP registry started on port ${actualPort} (PID: ${childProcess.pid})`);
-  
-  return {
-    pid: childProcess.pid,
-    port: actualPort,
-    url
-  };
+
+  // Acquire lock for PID tracking
+  if (pid) {
+    await acquireLock(MCP_SERVICE_NAME, pid, actualPort, `systemd:${MCP_SYSTEMD_UNIT}`);
+  }
+
+  await logger.info(`MCP server started on port ${actualPort} (PID: ${pid})`);
+
+  return { pid, port: actualPort, url };
 }
 
 export async function stopMcpRegistry(): Promise<boolean> {
-  const lock = await getLock(MCP_SERVICE_NAME);
-  if (!lock) {
+  const logger = createLogger('mcp');
+
+  try {
+    await execa('sudo', ['systemctl', 'stop', MCP_SYSTEMD_UNIT]);
+
+    // Wait up to 5 seconds for stop
+    for (let i = 0; i < 25; i++) {
+      await new Promise(r => setTimeout(r, 200));
+      const running = await isMcpRunning();
+      if (!running) {
+        await releaseLock(MCP_SERVICE_NAME);
+        await logger.info(`MCP server stopped`);
+        return true;
+      }
+    }
+
+    // Force kill if still running
+    await execa('sudo', ['systemctl', 'kill', MCP_SYSTEMD_UNIT]);
+    await releaseLock(MCP_SERVICE_NAME);
+    await logger.info(`MCP server force killed`);
+    return true;
+  } catch (error) {
+    await logger.error(`Failed to stop MCP server: ${error}`);
     return false;
   }
-  
-  const logger = createLogger('mcp');
-  
-  // Try SIGTERM first
-  try {
-    process.kill(lock.pid, 'SIGTERM');
-  } catch {
-    // Process might already be dead
-  }
-  
-  // Wait up to 5 seconds for graceful shutdown
-  let stopped = false;
-  for (let i = 0; i < 25; i++) {
-    await new Promise(r => setTimeout(r, 200));
-    const stillRunning = await isLockValid(MCP_SERVICE_NAME);
-    if (!stillRunning) {
-      stopped = true;
-      break;
-    }
-  }
-  
-  // Force kill if still running
-  if (!stopped) {
-    try {
-      process.kill(lock.pid, 'SIGKILL');
-    } catch {
-      // Process might already be dead
-    }
-    await new Promise(r => setTimeout(r, 500));
-  }
-  
-  // Release lock
-  await releaseLock(MCP_SERVICE_NAME);
-  await logger.info(`MCP registry stopped (PID: ${lock.pid})`);
-  
-  return true;
 }
 
 export async function checkMcpHealth(port?: number): Promise<{ ok: boolean; responseTime: number; error?: string }> {
   const url = getMcpBaseUrl(port);
   const result = await checkHealth(`${url}/health`);
-  
+
   return {
     ok: result.status === 'up',
     responseTime: result.responseTime || 0,
@@ -183,18 +135,45 @@ export async function checkMcpHealth(port?: number): Promise<{ ok: boolean; resp
   };
 }
 
-export async function listMcpTools(port?: number): Promise<string[]> {
+/**
+ * Fetch the list of MCP tool names via the /health/tools endpoint.
+ * This avoids the MCP Streamable HTTP handshake (initialize → tools/list)
+ * which requires specific Accept headers and session state.
+ *
+ * Distinguishes:
+ *  - server down → throws "Connection refused"
+ *  - HTTP error  → returns error detail
+ *  - success     → returns tool name array
+ */
+export async function listMcpTools(port?: number): Promise<{ tools: string[]; error?: string }> {
   const url = getMcpBaseUrl(port);
-  
+
   try {
-    const response = await fetch(`${url}/tools`);
+    const response = await fetch(`${url}/health/tools`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(5000),
+    });
+
     if (!response.ok) {
-      return [];
+      const body = await response.text().catch(() => '');
+      return { tools: [], error: `HTTP ${response.status}: ${response.statusText}${body ? ` — ${body.slice(0, 200)}` : ''}` };
     }
-    const tools = await response.json();
-    return Array.isArray(tools) ? tools.map((t: any) => t.name || t) : [];
-  } catch {
-    return [];
+
+    const result = await response.json();
+    const tools = result?.tools;
+    if (!Array.isArray(tools)) {
+      return { tools: [], error: 'Unexpected response shape from /health/tools' };
+    }
+    return { tools: tools.map((t: any) => String(t)) };
+  } catch (err: any) {
+    if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
+      return { tools: [], error: 'Connection timed out after 5s' };
+    }
+    if (err?.cause?.code === 'ECONNREFUSED') {
+      return { tools: [], error: 'Connection refused — server is down' };
+    }
+    return { tools: [], error: err?.message ?? 'Unknown error' };
   }
 }
 
@@ -206,28 +185,28 @@ export interface McpTestResult {
 }
 
 export async function testMcpTool(
-  toolName: string, 
-  params: object = {}, 
+  toolName: string,
+  params: object = {},
   port?: number
 ): Promise<McpTestResult> {
   const url = getMcpBaseUrl(port);
   const startTime = Date.now();
-  
+
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
-    
+
     const response = await fetch(`${url}/tools/${toolName}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params),
       signal: controller.signal
     });
-    
+
     clearTimeout(timeout);
-    
+
     const duration = Date.now() - startTime;
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       return {
@@ -236,7 +215,7 @@ export async function testMcpTool(
         duration
       };
     }
-    
+
     const result = await response.json();
     return {
       success: true,
@@ -259,27 +238,46 @@ export async function getMcpStatus(port?: number): Promise<{
   url: string;
   uptime?: number;
   tools: string[];
+  toolsError?: string;
 } | null> {
   const actualPort = port || getMcpDefaultPort();
   const url = getMcpBaseUrl(actualPort);
-  
-  const lock = await getLock(MCP_SERVICE_NAME);
+
   const running = await isMcpRunning(actualPort);
-  
-  const tools = running ? await listMcpTools(actualPort) : [];
-  
-  let uptime: number | undefined;
-  if (lock && running) {
-    const startTime = new Date(lock.startTime).getTime();
-    uptime = Date.now() - startTime;
+
+  let tools: string[] = [];
+  let toolsError: string | undefined;
+  if (running) {
+    const result = await listMcpTools(actualPort);
+    tools = result.tools;
+    toolsError = result.error;
   }
-  
+
+  let uptime: number | undefined;
+  if (running) {
+    try {
+      const { stdout } = await execa('systemctl', ['show', '--property=ActiveEnterTimestamp', '--value', MCP_SYSTEMD_UNIT]);
+      if (stdout.trim()) {
+        uptime = Date.now() - new Date(stdout.trim()).getTime();
+      }
+    } catch { /* ignore */ }
+  }
+
+  let pid: number | undefined;
+  if (running) {
+    try {
+      const { stdout } = await execa('systemctl', ['show', '--property=MainPID', '--value', MCP_SYSTEMD_UNIT]);
+      pid = parseInt(stdout.trim(), 10) || undefined;
+    } catch { /* ignore */ }
+  }
+
   return {
     running,
-    pid: lock?.pid,
+    pid,
     port: actualPort,
     url,
     uptime,
-    tools
+    tools,
+    toolsError,
   };
 }

@@ -21,8 +21,8 @@ const program = new Command('tools')
         const port = parseInt(options.port, 10);
         
         if (options.json) {
-          const tools = await listMcpTools(port);
-          console.log(JSON.stringify({ tools, port }, null, 2));
+          const toolsResult = await listMcpTools(port);
+          console.log(JSON.stringify({ tools: toolsResult.tools, error: toolsResult.error || null, port }, null, 2));
           return;
         }
         
@@ -38,11 +38,16 @@ const program = new Command('tools')
         const spinner = ora('Fetching tools...').start();
         
         try {
-          const tools = await listMcpTools(port);
+          const toolsResult = await listMcpTools(port);
+          const tools = toolsResult.tools;
           spinner.stop();
           
           if (tools.length === 0) {
-            printWarning('No tools available');
+            if (toolsResult.error) {
+              printWarning(`No tools available: ${toolsResult.error}`);
+            } else {
+              printWarning('No tools available');
+            }
             return;
           }
           
@@ -161,7 +166,8 @@ const program = new Command('tools')
               printError(`Tool not found: ${toolName}`);
               
               // Suggest similar tools
-              const tools = await listMcpTools(port);
+              const toolsResult = await listMcpTools(port);
+              const tools = toolsResult.tools;
               const similar = tools.filter(t => t.includes(toolName) || toolName.includes(t));
               if (similar.length > 0) {
                 console.log('');

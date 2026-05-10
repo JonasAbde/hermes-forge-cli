@@ -47,10 +47,14 @@ const program = new Command('test')
     // Test 3: List tools (if not quick mode)
     if (!options.quick) {
       const spinner3 = ora('Listing available tools...').start();
-      const tools = await listMcpTools(port);
+      const toolsResult = await listMcpTools(port);
+      const tools = toolsResult.tools;
       if (tools.length > 0) {
         spinner3.succeed(`Found ${tools.length} tool(s)`);
         results.push({ name: 'Tool Discovery', status: 'pass', message: `${tools.length} tools available` });
+      } else if (toolsResult.error) {
+        spinner3.warn(`Tool discovery: ${toolsResult.error}`);
+        results.push({ name: 'Tool Discovery', status: 'fail', message: toolsResult.error });
       } else {
         spinner3.warn('No tools found');
         results.push({ name: 'Tool Discovery', status: 'fail', message: 'No tools available' });

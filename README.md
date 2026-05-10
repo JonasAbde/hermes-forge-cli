@@ -1,20 +1,24 @@
 # Forge CLI
 
 [![CI](https://github.com/JonasAbde/hermes-forge-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/JonasAbde/hermes-forge-cli/actions/workflows/ci.yml)
-[![npm version](https://img.shields.io/npm/v/@hermes-forge/cli.svg)](https://www.npmjs.com/package/@hermes-forge/cli)
+[![Release](https://img.shields.io/github/v/release/JonasAbde/hermes-forge-cli)](https://github.com/JonasAbde/hermes-forge-cli/releases)
 
 CLI tooling for the [Hermes Forge Platform](https://forge.tekup.dk) — development, pack management, MCP tools, and deployment.
 
-Package: `@hermes-forge/cli` · Binary: `forge`
+Package: `hermes-forge-cli` · Binary: `forge`
 
 ## Installation
 
 ```bash
-# Install globally
-npm install -g @hermes-forge/cli
+# Direct from GitHub Release (no npm registry needed):
+npm install -g https://github.com/JonasAbde/hermes-forge-cli/releases/download/v1.0.0/hermes-forge-cli-1.0.0.tgz
 
-# Run directly
-forge --help
+# Or clone + link:
+git clone https://github.com/JonasAbde/hermes-forge-cli.git
+cd hermes-forge-cli && npm install && npm run build && npm link
+
+# Via npm (when published):
+# npm install -g hermes-forge-cli
 ```
 
 ## Quick Start

@@ -45,7 +45,7 @@ export class ConfigManager {
           web: 5180,
           api: 5181,
           docs: 5190,
-          mcp: 5200
+          mcp: 8641
         },
         browser: 'default',
         wsl2HostOverride: null,

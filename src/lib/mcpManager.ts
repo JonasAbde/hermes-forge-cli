@@ -181,7 +181,7 @@ export async function listMcpTools(port?: number): Promise<{ tools: string[]; er
     if (!Array.isArray(tools)) {
       return { tools: [], error: 'Unexpected response shape from /health/tools' };
     }
-    return { tools: tools.map((t: any) => String(t)) };
+    return { tools: tools.map((t: any) => t.name || String(t)) };
   } catch (err: any) {
     if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
       return { tools: [], error: 'Connection timed out after 5s' };

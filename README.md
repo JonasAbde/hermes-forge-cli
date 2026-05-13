@@ -1,24 +1,24 @@
 # Forge CLI
 
+[![npm](https://img.shields.io/npm/v/@jonasabde/hermes-forge-cli)](https://www.npmjs.com/package/@jonasabde/hermes-forge-cli)
 [![CI](https://github.com/JonasAbde/hermes-forge-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/JonasAbde/hermes-forge-cli/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/JonasAbde/hermes-forge-cli)](https://github.com/JonasAbde/hermes-forge-cli/releases)
 
-CLI tooling for the [Hermes Forge Platform](https://forge.tekup.dk) — development, pack management, MCP tools, and deployment.
+**27 commands** · Ink TUI · Plugins · AI-native · 300ms fast-path
 
-Package: `hermes-forge-cli` · Binary: `forge`
+CLI tooling for the [Hermes Forge Platform](https://forge.tekup.dk) — development, pack management, MCP tools, AI agents, and deployment.
 
 ## Installation
 
 ```bash
-# Direct from GitHub Release (no npm registry needed):
-npm install -g https://github.com/JonasAbde/hermes-forge-cli/releases/download/v1.0.0/hermes-forge-cli-1.0.0.tgz
+# Install globally
+npm install -g @jonasabde/hermes-forge-cli
 
-# Or clone + link:
-git clone https://github.com/JonasAbde/hermes-forge-cli.git
-cd hermes-forge-cli && npm install && npm run build && npm link
+# Or run without installing
+npx @jonasabde/hermes-forge-cli forge --help
 
-# Via npm (when published):
-# npm install -g hermes-forge-cli
+# Verify
+forge --version
+# → 2.0.0
 ```
 
 ## Quick Start
@@ -27,7 +27,7 @@ cd hermes-forge-cli && npm install && npm run build && npm link
 # Check connectivity
 forge remote status
 
-# Authenticate
+# Authenticate (get API key from forge.tekup.dk/settings)
 forge remote login --api-key <your-api-key>
 
 # View your profile
@@ -37,86 +37,83 @@ forge remote me
 forge remote packs
 ```
 
-## Commands
+## Features
 
-### Remote & Auth
-- `forge remote status` — Show remote forge status and health
-- `forge remote login` — Authenticate with the remote forge
-- `forge remote me` — Show your authenticated profile
-- `forge remote packs` — List packs available on the remote forge
+### 🎯 Core
+- `forge status` — Overview of all services
+- `forge doctor` — Run system diagnostics with port checks, lock files, env checks
+- `forge dev` — Start development services
+- `forge monitor` — Real-time health monitoring (table view)
+- `forge logs` — View service logs
+- `forge health` — System health checks
 
-### Deploy
-- `forge deploy list` — List all deployments
-- `forge deploy create <name> <pack-ids...>` — Create a new deployment
-- `forge deploy start <id>` — Start a deployment
-- `forge deploy stop <id>` — Stop a deployment
-- `forge deploy delete <id>` — Delete a deployment
+### 🤖 AI-native
+- `forge ask <query>` — Ask questions about the Forge platform (LLM-powered)
+- `forge suggest` — Get suggestions for next commands and improvements
+- `forge agent spawn <task>` — Spawn an autonomous AI agent for a task
 
-### Pack Management
+### 📦 Pack Management
 - `forge pack list` — List local packs
 - `forge pack validate` — Validate pack schema
 - `forge pack build` — Build pack metadata and cutouts
 - `forge pack metadata` — Generate compact metadata for MCP
-- `forge pack sync` — Sync local packs with remote forge (`--dry-run` supported)
+- `forge pack sync` — Sync local packs with remote forge
 
-### Core
-- `forge status` — Overview of all services
-- `forge doctor` — Run system diagnostics
-- `forge dev` — Start development services
-- `forge docs` — Start Forge Docs (VitePress)
-- `forge open <target>` — Open a Forge URL in browser
+### 🚀 Deploy
+- `forge deploy list/create/start/stop/delete` — Full deployment lifecycle
+
+### 🔌 Plugin System
+- `forge plugin create/discover/install/uninstall` — Manage plugins
+- Manifest-based: `manifest.yaml` defines commands, hooks, resources
+
+### 🔐 Remote & Auth
+- `forge remote status/login/me/packs` — Remote forge interaction
+
+### 🖥️ Interactive TUI
+- `forge tui` — Live terminal UI (Ink/React 19)
+- Views: Dashboard, Health Monitor, Pack Browser, Live Logs
+
+### 🔧 Utilities
 - `forge config` — Manage CLI configuration
 - `forge env` — Manage environment configurations
-- `forge logs` — View service logs
-- `forge monitor` — Real-time monitoring dashboard
 - `forge init` — Initialize a new project
-- `forge mcp` — Manage MCP Registry server
-- `forge plugin` — Manage plugins
-- `forge completion` — Generate shell completion scripts
-- `forge alias` — Manage command aliases
 - `forge backup` — Backup and restore data
-- `forge version` — Output the current version
+- `forge alias` — Manage command aliases
+- `forge completion bash/zsh/fish` — Shell completions
+- `forge upgrade` — Self-update
+- `forge workspace` — Manage workspaces
+- `forge schedule` — Manage schedules
+- `forge docs` — Start Forge Docs (VitePress)
+- `forge open <target>` — Open a URL
+- `forge notify` — Send notifications
+- `forge version` — Output version info
 
 ## Shell Completion
 
 ```bash
-# Bash
-forge completion bash --install
-
-# Zsh
-forge completion zsh --install
-
-# Fish
-forge completion fish --install
+forge completion bash --install   # Bash
+forge completion zsh --install    # Zsh
+forge completion fish --install   # Fish
 ```
 
 ## Documentation
 
-- **[Auth Flow](docs/CLI_AUTH_FLOW.md)** — Authentication, API keys, troubleshooting
-- **[Pack Sync Contract](docs/CLI_PACK_SYNC_CONTRACT.md)** — Backend API spec for pack sync
-- **[Release Checklist](docs/FORGE_CLI_RELEASE_CHECKLIST.md)** — v1 release procedure
+- [Release Notes](CHANGELOG.md)
+- [Auth Flow](docs/CLI_AUTH_FLOW.md) — Authentication, API keys, troubleshooting
+- [Pack Sync Contract](docs/CLI_PACK_SYNC_CONTRACT.md) — Backend API spec for pack sync
+- [Health Check](docs/HEALTH_CHECK.md) — Monitoring and health endpoints
+- [Release Checklist](docs/FORGE_CLI_RELEASE_CHECKLIST.md) — Release procedure
 
 ## Development
 
 ```bash
-# Clone the repo
 git clone https://github.com/JonasAbde/hermes-forge-cli.git
 cd hermes-forge-cli
-
-# Install dependencies
 npm install
-
-# Build
-npm run build
-
-# Test
-npm test
-
-# Lint
-npm run lint
-
-# Development watch mode
-npm run dev
+npm run build   # Build TypeScript
+npm test        # Run tests (29 tests)
+npm run dev     # Watch mode
+npm run lint    # Lint
 ```
 
 ## Requirements
@@ -126,5 +123,5 @@ npm run dev
 
 ## Related
 
-- [Hermes Forge Platform](https://github.com/JonasAbde/hermes-forge-platform) — The Forge platform server
+- [Hermes Forge Platform](https://github.com/JonasAbde/hermes-forge-platform) — Platform server
 - [Forge.tekup.dk](https://forge.tekup.dk) — Hosted Forge instance

@@ -66,12 +66,14 @@ if (process.argv.length <= 2 || (process.argv[2] && !process.argv[3] && (process
     program.addCommand(new Command('notify').description('Manage notifications'));
     program.addCommand(new Command('xp').description('View XP, level, and progress'));
     program.addCommand(new Command('badge').alias('badges').description('View badges and achievements'));
-    program.addCommand(new Command('leaderboard').alias('lb').description('View leaderboard rankings'));
+    program.addCommand(new Command('market').alias('markets').description('Interact with the Forge marketplace'));
+    program.addCommand(new Command('watch').description('Subscribe to Forge events and monitor changes'));
 
     printHeader('Forge CLI');
     program.outputHelp();
     console.log('\n' + chalk.hex('#8b5cf6')('  ⚡ AI-native: forge ask, forge suggest, forge agent'));
-    console.log(chalk.hex('#6366f1')('  🖥️  TUI: forge tui | 🎮 XP: forge xp, forge badge'));
+    console.log(chalk.hex('#6366f1')('  🖥️  TUI: forge tui | 🎮 XP: forge xp, badge, lb'));
+    console.log(chalk.hex('#8b5cf6')('  🏪 Market: forge market | 🔍 Watch: forge watch'));
     console.log(chalk.hex('#6b7280')('  forge.tekup.dk · v' + pkg.version + '\n'));
   };
     showHelp().then(() => process.exit(0)).catch((err) => {
@@ -122,9 +124,11 @@ async function main() {
     import('./commands/ask.js'),
     import('./commands/suggest.js'),
     import('./commands/agent.js'),
-    import('./commands/xp.js'),
     import('./commands/badge.js'),
     import('./commands/leaderboard.js'),
+    import('./commands/market.js'),
+    import('./commands/watch.js'),
+    import('./commands/xp.js'),
   ]);
 
   commands.forEach(cmd => program.addCommand(cmd.default));

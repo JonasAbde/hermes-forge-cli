@@ -25,8 +25,8 @@ if (process.argv.includes('--version') || process.argv.includes('-V')) {
     console.log(pkg.version);
     process.exit(0);
 }
-// ─── Fast-path: --help ───
-if (process.argv.includes('--help') || process.argv.includes('-h') || process.argv.length <= 2) {
+// ─── Fast-path: --help (only for root, not subcommands) ───
+if (process.argv.length <= 2 || (process.argv[2] && !process.argv[3] && (process.argv.includes('--help') || process.argv.includes('-h')))) {
     // Show help without loading all commands — use precomputed if available
     const showHelp = async () => {
         // Only load commands needed for help output
@@ -60,14 +60,19 @@ if (process.argv.includes('--help') || process.argv.includes('-h') || process.ar
         program.addCommand(new Command('init').description('Initialize a project from template'));
         program.addCommand(new Command('docs').description('Start documentation server'));
         program.addCommand(new Command('notify').description('Manage notifications'));
+        program.addCommand(new Command('xp').description('View XP, level, and progress'));
+        program.addCommand(new Command('badge').alias('badges').description('View badges and achievements'));
+        program.addCommand(new Command('leaderboard').alias('lb').description('View leaderboard rankings'));
         printHeader('Forge CLI');
         program.outputHelp();
         console.log('\n' + chalk.hex('#8b5cf6')('  ⚡ AI-native: forge ask, forge suggest, forge agent'));
-        console.log(chalk.hex('#6366f1')('  🖥️  TUI: forge tui | 📦 Extensions: forge plugin list'));
+        console.log(chalk.hex('#6366f1')('  🖥️  TUI: forge tui | 🎮 XP: forge xp, forge badge'));
         console.log(chalk.hex('#6b7280')('  forge.tekup.dk · v' + pkg.version + '\n'));
     };
-    showHelp().catch(console.error);
-    process.exit(0);
+    showHelp().then(() => process.exit(0)).catch((err) => {
+        console.error('Help display error:', err);
+        process.exit(1);
+    });
 }
 // ─── Fast-path: version command (standalone) ───
 if (process.argv[2] === 'version') {
@@ -109,6 +114,9 @@ async function main() {
         import('./commands/ask.js'),
         import('./commands/suggest.js'),
         import('./commands/agent.js'),
+        import('./commands/xp.js'),
+        import('./commands/badge.js'),
+        import('./commands/leaderboard.js'),
     ]);
     commands.forEach(cmd => program.addCommand(cmd.default));
     // Inject extension commands

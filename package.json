@@ -1,6 +1,9 @@
 {
-  "name": "hermes-forge-cli",
+  "name": "@hermes-agent-dk/hermes-forge-cli",
   "version": "1.0.0",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "description": "Official CLI for Hermes Forge Platform - dev, status, pack management, MCP, and doctor",
   "type": "module",
   "bin": {
@@ -39,8 +42,5 @@
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.58.1",
     "vitest": "^2.1.8"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
   }
 }

@@ -4,6 +4,14 @@
   "publishConfig": {
     "access": "public"
   },
+  "author": "JonasAbde",
+  "keywords": [
+    "forge-cli",
+    "hermes-forge",
+    "ai-agents",
+    "agent-packs",
+    "cli"
+  ],
   "description": "Official CLI for Hermes Forge Platform - dev, status, pack management, MCP, and doctor",
   "type": "module",
   "bin": {

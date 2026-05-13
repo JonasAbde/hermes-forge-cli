@@ -32,12 +32,15 @@ import remoteCommand from './commands/remote/index.js';
 import deployCommand from './commands/deploy.js';
 import healthCommand from './commands/health.js';
 import tuiCommand from './commands/tui.js';
+import askCommand from './commands/ask.js';
+import suggestCommand from './commands/suggest.js';
+import agentCommand from './commands/agent.js';
 import { ensureExtensionDirs, injectExtensionCommands } from './lib/extensionManager.js';
 
 // Load extensions before registering built-in commands
 ensureExtensionDirs();
 
-program.addCommand(statusCommand).addCommand(doctorCommand).addCommand(devCommand).addCommand(docsCommand).addCommand(openCommand).addCommand(packCommand).addCommand(mcpCommand).addCommand(configCommand).addCommand(envCommand).addCommand(logsCommand).addCommand(monitorCommand).addCommand(initCommand).addCommand(pluginCommand).addCommand(completionCommand).addCommand(aliasCommand).addCommand(backupCommand).addCommand(upgradeCommand).addCommand(scheduleCommand).addCommand(notifyCommand).addCommand(workspaceCommand).addCommand(interactiveCommand).addCommand(remoteCommand).addCommand(deployCommand).addCommand(healthCommand).addCommand(tuiCommand)
+program.addCommand(statusCommand).addCommand(doctorCommand).addCommand(devCommand).addCommand(docsCommand).addCommand(openCommand).addCommand(packCommand).addCommand(mcpCommand).addCommand(configCommand).addCommand(envCommand).addCommand(logsCommand).addCommand(monitorCommand).addCommand(initCommand).addCommand(pluginCommand).addCommand(completionCommand).addCommand(aliasCommand).addCommand(backupCommand).addCommand(upgradeCommand).addCommand(scheduleCommand).addCommand(notifyCommand).addCommand(workspaceCommand).addCommand(interactiveCommand).addCommand(remoteCommand).addCommand(deployCommand).addCommand(healthCommand).addCommand(tuiCommand).addCommand(askCommand).addCommand(suggestCommand).addCommand(agentCommand)
 
 // Inject extension commands (can't override built-ins)
 injectExtensionCommands(program);

@@ -29,8 +29,8 @@ if (process.argv.includes('--version') || process.argv.includes('-V')) {
   process.exit(0);
 }
 
-// ─── Fast-path: --help ───
-if (process.argv.includes('--help') || process.argv.includes('-h') || process.argv.length <= 2) {
+// ─── Fast-path: --help (only for root, not subcommands) ───
+if (process.argv.length <= 2 || (process.argv[2] && !process.argv[3] && (process.argv.includes('--help') || process.argv.includes('-h')))) {
   // Show help without loading all commands — use precomputed if available
   const showHelp = async () => {
     // Only load commands needed for help output
@@ -71,8 +71,10 @@ if (process.argv.includes('--help') || process.argv.includes('-h') || process.ar
     console.log(chalk.hex('#6366f1')('  🖥️  TUI: forge tui | 📦 Extensions: forge plugin list'));
     console.log(chalk.hex('#6b7280')('  forge.tekup.dk · v' + pkg.version + '\n'));
   };
-  showHelp().catch(console.error);
-  process.exit(0);
+    showHelp().then(() => process.exit(0)).catch((err) => {
+        console.error('Help display error:', err);
+        process.exit(1);
+    });
 }
 
 // ─── Fast-path: version command (standalone) ───

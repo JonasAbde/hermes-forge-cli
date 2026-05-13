@@ -1,3 +1,5 @@
+<p align="center"><img src=".github/forge-wordmark.svg" alt="Hermes Forge" width="400"/></p>
+
 # Forge CLI
 
 [![npm](https://img.shields.io/npm/v/@jonasabde/hermes-forge-cli)](https://www.npmjs.com/package/@jonasabde/hermes-forge-cli)

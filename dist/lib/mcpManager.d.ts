@@ -2,7 +2,7 @@ export declare function getMcpRegistryPath(): string;
 export declare function getMcpDefaultPort(): number;
 export declare function getMcpBaseUrl(port?: number): string;
 export declare function isMcpRegistryInstalled(): Promise<boolean>;
-export declare function isMcpRunning(_port?: number): Promise<boolean>;
+export declare function isMcpRunning(port?: number): Promise<boolean>;
 export interface McpStartResult {
     pid: number;
     port: number;

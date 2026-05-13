@@ -3,16 +3,24 @@
  *
  * Full-screen TUI dashboard for monitoring and managing the Forge ecosystem.
  * Uses neo-blessed for terminal rendering with brand styling.
+ * v2: Real-time pack sync, live log streaming, grafiske metrics
  */
 
 import blessed from 'neo-blessed';
 import { createDashboard } from './dashboard.js';
-
-export interface TuiOptions {
-  initialView?: 'dashboard' | 'packs' | 'health';
-}
+import { createPackBrowser } from './pack-browser.js';
+import { createLiveLogs } from './live-logs.js';
 
 const { widget } = blessed;
+
+export interface TuiOptions {
+  initialView?: 'dashboard' | 'packs' | 'health' | 'logs';
+}
+
+// ─── Refresh interval constants ───
+const DASHBOARD_INTERVAL = 5000;  // 5s
+const PACK_INTERVAL = 15000;      // 15s
+const HEALTH_INTERVAL = 10000;    // 10s
 
 /**
  * Launch the Hermes Forge TUI
@@ -28,7 +36,7 @@ export function launchTUI(_options: TuiOptions = {}): void {
   });
 
   // ─── Header bar ───
-  const header = new widget.Box({
+  new widget.Box({
     parent: screen,
     top: 0,
     left: 0,
@@ -80,10 +88,19 @@ export function launchTUI(_options: TuiOptions = {}): void {
     style: { bg: 234, fg: 255 },
   });
 
+  // ─── Refresh timers ───
+  let refreshTimers: NodeJS.Timeout[] = [];
+
+  function clearTimers(): void {
+    for (const t of refreshTimers) clearInterval(t);
+    refreshTimers = [];
+  }
+
   // ─── Views ───
   let currentView: any = null;
 
   function clearView(): void {
+    clearTimers();
     if (currentView) {
       mainArea.remove(currentView);
       currentView.destroy();
@@ -91,81 +108,101 @@ export function launchTUI(_options: TuiOptions = {}): void {
     }
   }
 
+  // ─── Set status bar message ───
+  function setStatus(msg: string): void {
+    statusBar.setContent('  ' + msg);
+    screen.render();
+  }
+
+  // ─── Dashboard ───
   function showDashboard(): void {
     clearView();
+    setStatus('Dashboard — Auto-refresh every ' + (DASHBOARD_INTERVAL / 1000) + 's');
     currentView = createDashboard(mainArea);
+
+    // Auto-refresh
+    const timer = setInterval(() => {
+      if (currentView) {
+        try {
+          currentView.destroy();
+        } catch { /* ignore */ }
+        currentView = createDashboard(mainArea);
+        screen.render();
+      }
+    }, DASHBOARD_INTERVAL);
+    refreshTimers.push(timer);
+
     screen.render();
   }
 
+  // ─── Pack Browser ───
   function showPacks(): void {
     clearView();
-    const box = new widget.Box({
-      parent: mainArea,
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
-      style: { bg: 234, fg: 248 },
-      content: '{center}Pack Browser — Loading...{/center}',
-      tags: true,
+    setStatus('Pack Browser — Auto-refresh every ' + (PACK_INTERVAL / 1000) + 's | Shift+R: Force reload');
+    createPackBrowser(mainArea, screen, (container) => {
+      currentView = container;
+
+      // Auto-refresh
+      const timer = setInterval(() => {
+        if (currentView) {
+          try {
+            currentView.destroy();
+          } catch { /* ignore */ }
+          createPackBrowser(mainArea, screen, (c) => { currentView = c; });
+        }
+      }, PACK_INTERVAL);
+      refreshTimers.push(timer);
+
+      screen.render();
     });
-    box.setContent(
-      '{center}{bold}Pack Browser{/bold}{/center}\n\n' +
-      '  No packs loaded. Run forge pack list in the CLI.\n\n' +
-      '  Commands:\n' +
-      '    forge pack list      \u2014 List local packs\n' +
-      '    forge pack sync      \u2014 Sync from server\n' +
-      '    forge remote packs   \u2014 Browse remote packs\n'
-    );
-    currentView = box;
-    screen.render();
   }
 
+  // ─── Health Monitor ───
   function showHealth(): void {
     clearView();
-    const log = new widget.Log({
+    setStatus('Health Monitor — Auto-refresh every ' + (HEALTH_INTERVAL / 1000) + 's');
+
+    const healthLog = new widget.Log({
       parent: mainArea,
       top: 0,
       left: 0,
       width: '100%',
       height: '100%',
-      style: { fg: 248, bg: 234 },
-      scrollback: 100,
+      label: ' Health Monitor (live) ',
+      border: { type: 'line', fg: 62 },
+      style: { fg: 248, bg: 234, border: { fg: 62 } },
+      scrollback: 200,
       tags: true,
+      scrollOnInput: true,
     });
-    log.log('{bold}Health Monitor{/bold}');
-    log.log('\u2500'.repeat(50));
-    log.log('Checking services...');
-    log.log('');
-    log.log('  {green-fg}\u2713{/green-fg} forge.tekup.dk \u2014 200 OK');
-    log.log('  {green-fg}\u2713{/green-fg} API \u2014 /api/health \u2192 ok');
-    log.log('  {yellow-fg}\u26a0{/yellow-fg} LemonSqueezy \u2014 read-only key');
-    log.log('  {green-fg}\u2713{/green-fg} SQLite \u2014 connected');
-    currentView = log;
+    currentView = healthLog;
+
+    // Initial check
+    checkHealthAndLog(healthLog);
+
+    // Auto-refresh
+    const timer = setInterval(() => {
+      checkHealthAndLog(healthLog);
+      screen.render();
+    }, HEALTH_INTERVAL);
+    refreshTimers.push(timer);
+
     screen.render();
   }
 
+  // ─── Live Logs ───
   function showLogs(): void {
     clearView();
-    const log = new widget.Log({
-      parent: mainArea,
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
-      style: { fg: 248, bg: 234 },
-      scrollback: 200,
-      tags: true,
+    setStatus('Live Logs — Tail API logs');
+    createLiveLogs(mainArea, (container) => {
+      currentView = container;
+      screen.render();
     });
-    log.log('{bold}Live Log Feed{/bold}');
-    log.log('\u2500'.repeat(50));
-    log.log('Not implemented \u2014 use "forge logs --tail" in CLI');
-    currentView = log;
-    screen.render();
   }
 
   // ─── Key bindings ───
   screen.key(['q', 'Q', 'C-c'], () => {
+    clearTimers();
     screen.destroy();
     process.exit(0);
   });
@@ -176,7 +213,42 @@ export function launchTUI(_options: TuiOptions = {}): void {
     screen.render();
   });
 
+  // Shift+R reload packs
+  screen.key(['S-r'], () => {
+    if (currentView) {
+      showPacks();
+    }
+  });
+
   // ─── Start on dashboard ───
   showDashboard();
   screen.render();
+}
+
+/**
+ * Run health checks and append results to the log widget
+ */
+async function checkHealthAndLog(log: any): Promise<void> {
+  const results = [
+    { name: 'forge.tekup.dk', url: 'https://forge.tekup.dk' },
+    { name: 'API Health', url: 'https://forge.tekup.dk/api/health' },
+  ];
+
+  log.log('');
+  log.log('{bold}' + new Date().toLocaleTimeString() + ' — Health Check{/bold}');
+
+  for (const r of results) {
+    try {
+      const start = Date.now();
+      const res = await fetch(r.url, { signal: AbortSignal.timeout(5000) });
+      const ms = Date.now() - start;
+      if (res.ok) {
+        log.log('  {green-fg}\u2713{/green-fg} ' + r.name + ' \u2014 ' + ms + 'ms (200)');
+      } else {
+        log.log('  {red-fg}\u2717{/red-fg} ' + r.name + ' \u2014 ' + res.status);
+      }
+    } catch (e: any) {
+      log.log('  {red-fg}\u2717{/red-fg} ' + r.name + ' \u2014 ' + (e.message || 'timeout'));
+    }
+  }
 }

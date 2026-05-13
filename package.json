@@ -27,6 +27,7 @@
     "commander": "^12.1.0",
     "conf": "^13.0.0",
     "execa": "^9.5.2",
+    "js-yaml": "^4.1.1",
     "neo-blessed": "^0.2.0",
     "open": "^10.1.0",
     "ora": "^8.2.0",
@@ -35,6 +36,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.13.0",
     "@types/prompts": "^2.4.9",
     "eslint": "^10.2.0",

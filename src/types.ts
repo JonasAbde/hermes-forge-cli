@@ -145,3 +145,35 @@ export interface CliConfig {
   };
 }
 
+// ─── Extension / Plugin System ──────────────────────────────────
+
+export interface ExtensionCommand {
+  name: string;
+  description: string;
+  module: string;
+  aliases?: string[];
+}
+
+export interface ExtensionHooks {
+  onInit?: string;
+  onBeforeExit?: string;
+  onCommand?: string;
+}
+
+export interface ExtensionManifest {
+  name: string;
+  version: string;
+  description?: string;
+  commands?: ExtensionCommand[];
+  hooks?: ExtensionHooks;
+  dependencies?: Record<string, string>;
+}
+
+export interface ExtensionEntry {
+  manifest: ExtensionManifest;
+  dir: string;
+  enabled: boolean;
+}
+
+export type HookName = 'onInit' | 'onBeforeExit' | 'onCommand';
+

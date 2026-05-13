@@ -1,209 +1,204 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { listInstalledPlugins, installPlugin, uninstallPlugin, updatePlugin, searchPlugins, executePlugin, validatePlugin, getPluginDir } from '../lib/pluginManager.js';
-import { printHeader, printSuccess, printError, printInfo, printWarning } from '../lib/output.js';
-import ora from 'ora';
+import prompts from 'prompts';
+import { printHeader, printInfo, printSuccess, printWarning, printError, printKV, printTable } from '../lib/output.js';
+import { loadExtensions, clearExtensionCache, getUserExtensionDir, getProjectExtensionDir, extensionCount, isExtensionInstalled, } from '../lib/extensionManager.js';
 const program = new Command('plugin')
-    .description('Manage Forge CLI plugins')
-    .addCommand(new Command('list')
-    .description('List installed plugins')
+    .description('Manage Forge plugins and extensions')
+    .alias('plugins');
+// ── list ────────────────────────────────────────────────────────
+program
+    .command('list')
+    .description('List installed extensions')
     .option('--json', 'output as JSON')
-    .action(async (options) => {
-    const plugins = await listInstalledPlugins();
-    if (options.json) {
-        console.log(JSON.stringify(plugins, null, 2));
+    .action((opts) => {
+    const extensions = loadExtensions();
+    if (opts.json) {
+        console.log(JSON.stringify(extensions.map(e => ({
+            name: e.manifest.name,
+            version: e.manifest.version,
+            description: e.manifest.description,
+            enabled: e.enabled,
+            dir: e.dir,
+            commands: e.manifest.commands?.map(c => c.name) || [],
+            hooks: e.manifest.hooks ? Object.keys(e.manifest.hooks) : [],
+        })), null, 2));
         return;
     }
-    printHeader('Installed Plugins');
-    if (plugins.length === 0) {
-        printInfo('No plugins installed');
-        printInfo('Search with: forge plugin search');
-        printInfo('Install with: forge plugin install <name>');
+    if (extensions.length === 0) {
+        printHeader('Forge Extensions');
+        printInfo('No extensions installed.');
+        printInfo('');
+        printInfo(`  Extension directories:`);
+        printInfo(`    User: ${getUserExtensionDir()}`);
+        printInfo(`    Project: ${getProjectExtensionDir()}`);
+        printInfo('');
+        printInfo('  Create an extension:');
+        printInfo(`    mkdir -p ${getUserExtensionDir()}/my-ext`);
+        printInfo('    Create manifest.yaml with commands');
         return;
     }
-    const { default: Table } = await import('cli-table3');
-    const table = new Table({
-        head: [chalk.bold('Plugin'), chalk.bold('Version'), chalk.bold('Commands'), chalk.bold('Description')],
-        colWidths: [25, 12, 20, 40],
-        style: { head: ['cyan'] }
-    });
-    plugins.forEach(p => {
-        table.push([
-            p.name,
-            chalk.gray(p.version),
-            p.commands.join(', '),
-            p.description.slice(0, 37) + (p.description.length > 37 ? '...' : '')
-        ]);
-    });
-    console.log(table.toString());
-    printInfo(`\nTotal: ${plugins.length} plugin(s)`);
-}))
-    .addCommand(new Command('search')
-    .description('Search for available plugins')
-    .argument('[query]', 'search query')
-    .action(async (query) => {
-    printHeader('Search Plugins');
-    const spinner = ora('Searching...').start();
-    try {
-        const plugins = await searchPlugins(query);
-        spinner.stop();
-        if (plugins.length === 0) {
-            printInfo('No plugins found');
+    printHeader('Forge Extensions');
+    printInfo(`${extensionCount()} extension(s) installed`);
+    console.log('');
+    const headers = ['Name', 'Version', 'Commands', 'Hooks', 'Status'];
+    const rows = extensions.map(e => [
+        e.manifest.name,
+        e.manifest.version,
+        String(e.manifest.commands?.length || 0),
+        e.manifest.hooks ? Object.keys(e.manifest.hooks).join(', ') : '—',
+        e.enabled ? chalk.green('enabled') : chalk.gray('disabled'),
+    ]);
+    printTable(headers, rows);
+    console.log('');
+    printInfo(`User extension dir: ${getUserExtensionDir()}`);
+    printInfo(`Project extension dir: ${getProjectExtensionDir()}`);
+});
+// ── install ──────────────────────────────────────────────────────
+program
+    .command('install <path>')
+    .description('Install an extension from a local path or git URL')
+    .option('-n, --name <name>', 'Override extension name')
+    .action(async (installPath, opts) => {
+    printHeader('Install Extension');
+    const { execa } = await import('execa');
+    const { existsSync, mkdirSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    let name = opts.name;
+    if (installPath.startsWith('http') || installPath.startsWith('git@')) {
+        // Git URL — clone
+        printInfo(`Cloning from ${installPath}...`);
+        try {
+            const targetDir = join(getUserExtensionDir(), 'tmp-clone');
+            await execa('git', ['clone', installPath, targetDir], { timeout: 30000 });
+            // Check for manifest
+            const { readdirSync } = await import('node:fs');
+            const items = readdirSync(targetDir);
+            const hasManifest = items.some(i => i === 'manifest.yaml' || i === 'manifest.yml' || i === 'manifest.json');
+            if (!hasManifest) {
+                // Maybe it's in a subdirectory
+                for (const item of items) {
+                    const itemPath = join(targetDir, item);
+                    if (itemPath) {
+                        const subItems = readdirSync(itemPath);
+                        if (subItems.some((s) => s === 'manifest.yaml' || s === 'manifest.yml' || s === 'manifest.json')) {
+                            // Move contents up
+                            const { renameSync } = await import('node:fs');
+                            // TODO: handle nested structure
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        catch (err) {
+            printError(`Failed to clone: ${err.message}`);
             return;
         }
-        console.log(chalk.gray(`Found ${plugins.length} plugin(s):\n`));
-        plugins.forEach(p => {
-            console.log(`${chalk.bold.cyan(p.name)} ${chalk.gray(p.version)}`);
-            console.log(`  ${p.description}`);
-            console.log(`  ${chalk.gray(`Author: ${p.author} • ${p.installs} installs`)}`);
-            console.log('');
-        });
-        printInfo('Install with: forge plugin install <name>');
-    }
-    catch (error) {
-        spinner.fail('Search failed');
-        printError(error.message);
-    }
-}))
-    .addCommand(new Command('install')
-    .description('Install a plugin from npm or git')
-    .argument('<source>', 'plugin name, npm package, or git URL')
-    .option('-g, --global', 'install globally')
-    .action(async (source, options) => {
-    printHeader('Install Plugin');
-    printInfo(`Installing: ${chalk.cyan(source)}`);
-    const spinner = ora('Installing...').start();
-    try {
-        const plugin = await installPlugin(source, options);
-        spinner.succeed(`Installed ${plugin.name}@${plugin.version}`);
-        console.log('');
-        printSuccess(`Plugin installed successfully!`);
-        printInfo(`Commands added: ${plugin.commands.join(', ')}`);
-        if (plugin.commands.length > 0) {
-            console.log('');
-            printInfo(`Try: forge ${plugin.commands[0]} --help`);
-        }
-    }
-    catch (error) {
-        spinner.fail('Installation failed');
-        printError(error.message);
-        process.exit(1);
-    }
-}))
-    .addCommand(new Command('uninstall')
-    .description('Uninstall a plugin')
-    .alias('remove')
-    .argument('<name>', 'plugin name')
-    .action(async (name) => {
-    printHeader('Uninstall Plugin');
-    printWarning(`This will remove ${chalk.bold(name)}`);
-    try {
-        await uninstallPlugin(name);
-        printSuccess(`Plugin ${name} uninstalled`);
-    }
-    catch (error) {
-        printError(error.message);
-        process.exit(1);
-    }
-}))
-    .addCommand(new Command('update')
-    .description('Update a plugin')
-    .argument('<name>', 'plugin name')
-    .action(async (name) => {
-    printHeader('Update Plugin');
-    const spinner = ora(`Updating ${name}...`).start();
-    try {
-        const plugin = await updatePlugin(name);
-        spinner.succeed(`Updated to ${plugin.version}`);
-        printSuccess(`${plugin.name}@${plugin.version} is now up to date`);
-    }
-    catch (error) {
-        spinner.fail('Update failed');
-        printError(error.message);
-        process.exit(1);
-    }
-}))
-    .addCommand(new Command('validate')
-    .description('Validate a plugin directory')
-    .argument('<path>', 'path to plugin directory')
-    .action(async (pluginPath) => {
-    printHeader('Validate Plugin');
-    const { valid, errors } = await validatePlugin(pluginPath);
-    if (valid) {
-        printSuccess('Plugin structure is valid');
     }
     else {
-        printError('Plugin validation failed');
-        errors.forEach(e => printError(`  • ${e}`));
-        process.exit(1);
-    }
-}))
-    .addCommand(new Command('exec')
-    .description('Execute a plugin command directly')
-    .argument('<plugin>', 'plugin name')
-    .argument('<command>', 'command to run')
-    .argument('[args...]', 'arguments')
-    .allowUnknownOption()
-    .action(async (pluginName, command, args) => {
-    try {
-        const result = await executePlugin(pluginName, command, args);
-        if (result.stdout) {
-            console.log(result.stdout);
+        // Local path
+        const { resolve } = await import('node:path');
+        const fullPath = resolve(installPath);
+        const { statSync } = await import('node:fs');
+        if (!existsSync(fullPath)) {
+            printError(`Path not found: ${fullPath}`);
+            return;
         }
-        if (result.stderr) {
-            console.error(result.stderr);
+        const stat = statSync(fullPath);
+        if (!stat.isDirectory()) {
+            printError(`Path must be a directory: ${fullPath}`);
+            return;
         }
-        process.exit(result.exitCode);
-    }
-    catch (error) {
-        printError(error.message);
-        process.exit(1);
-    }
-}))
-    .addCommand(new Command('create')
-    .description('Create a new plugin from template')
-    .argument('<name>', 'plugin name')
-    .action(async (name) => {
-    printHeader('Create Plugin');
-    printInfo(`Creating plugin: ${chalk.bold(name)}`);
-    const pluginDir = getPluginDir(name);
-    // Basic plugin template
-    const manifest = {
-        name,
-        version: '1.0.0',
-        description: 'A Forge CLI plugin',
-        author: '',
-        main: 'index.js',
-        commands: [
-            {
-                name: 'hello',
-                description: 'Say hello from the plugin'
+        // Check manifest
+        const { readdirSync } = await import('node:fs');
+        const items = readdirSync(fullPath);
+        const hasManifest = items.some(i => i === 'manifest.yaml' || i === 'manifest.yml' || i === 'manifest.json');
+        if (!hasManifest) {
+            printError(`No manifest.yaml found in ${fullPath}`);
+            printInfo('Extensions require a manifest.yaml file');
+            return;
+        }
+        // Determine name from manifest or use the directory name
+        if (!name) {
+            const { readFileSync } = await import('node:fs');
+            const yaml = await import('js-yaml');
+            const manifestPath = items.find(i => i === 'manifest.yaml' || i === 'manifest.yml' || i === 'manifest.json');
+            if (manifestPath) {
+                const raw = readFileSync(join(fullPath, manifestPath), 'utf-8');
+                const parsed = yaml.load(raw);
+                name = parsed?.name || installPath.split('/').pop() || 'unknown';
             }
-        ]
-    };
-    const entryCode = `#!/usr/bin/env node
-// ${name} plugin for Forge CLI
-
-const command = process.argv[2];
-
-switch (command) {
-  case 'hello':
-    console.log('Hello from ${name}!');
-    break;
-  default:
-    console.log('Available commands: hello');
-    process.exit(1);
-}
-`;
-    const { mkdir, writeFile } = await import('fs/promises');
-    await mkdir(pluginDir, { recursive: true });
-    await writeFile(pluginDir + '/package.json', JSON.stringify(manifest, null, 2));
-    await writeFile(pluginDir + '/index.js', entryCode);
-    printSuccess(`Plugin ${name} created at:`);
-    printInfo(`  ${pluginDir}`);
-    printInfo('\nNext steps:');
-    printInfo(`  1. Edit ${pluginDir}/index.js`);
-    printInfo(`  2. Test with: forge plugin exec ${name} hello`);
-}));
+            else {
+                name = installPath.split('/').pop() || 'unknown';
+            }
+        }
+        // Copy to extensions directory
+        const targetDir = join(getUserExtensionDir(), name);
+        if (existsSync(targetDir)) {
+            printWarning(`Extension '${name}' already exists at ${targetDir}`);
+            const { confirmed } = await prompts({
+                type: 'confirm',
+                name: 'confirmed',
+                message: 'Overwrite?',
+                initial: false,
+            });
+            if (!confirmed) {
+                printInfo('Install cancelled');
+                return;
+            }
+        }
+        mkdirSync(targetDir, { recursive: true });
+        const { execa } = await import('execa');
+        await execa('cp', ['-r', `${fullPath}/.`, targetDir], { timeout: 10000 });
+        clearExtensionCache();
+        printSuccess(`Extension '${name}' installed to ${targetDir}`);
+    }
+});
+// ── remove ───────────────────────────────────────────────────────
+program
+    .command('remove <name>')
+    .alias('rm')
+    .description('Remove an extension')
+    .action(async (name) => {
+    if (!isExtensionInstalled(name)) {
+        printError(`Extension '${name}' not found`);
+        return;
+    }
+    const { join } = await import('node:path');
+    const { existsSync, rmSync } = await import('node:fs');
+    // Try user dir first, then project dir
+    const userDir = join(getUserExtensionDir(), name);
+    const projectDir = join(getProjectExtensionDir(), name);
+    let targetDir = '';
+    if (existsSync(userDir)) {
+        // Check if it's from a known path
+        targetDir = userDir;
+    }
+    else if (existsSync(projectDir)) {
+        targetDir = projectDir;
+    }
+    else {
+        targetDir = userDir; // fallback
+    }
+    try {
+        rmSync(targetDir, { recursive: true, force: true });
+        clearExtensionCache();
+        printSuccess(`Extension '${name}' removed`);
+    }
+    catch (err) {
+        printError(`Failed to remove: ${err.message}`);
+    }
+});
+// ── dir ──────────────────────────────────────────────────────────
+program
+    .command('dir')
+    .description('Show extension directories')
+    .action(() => {
+    printHeader('Extension Directories');
+    printKV('User extensions', getUserExtensionDir());
+    printKV('Project extensions', getProjectExtensionDir());
+    printKV('Extensions installed', String(extensionCount()));
+});
 export default program;
 //# sourceMappingURL=plugin.js.map

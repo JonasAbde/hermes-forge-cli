@@ -6,6 +6,20 @@ const MCP_SERVICE_NAME = 'forge-mcp';
 const MCP_SYSTEMD_UNIT = 'hermes-forge-mcp.service';
 const DEFAULT_MCP_PORT = 8641;
 const MCP_PROJECT_DIR = '/home/ubuntu/projects/hermes-forge-mcp';
+/** Checks if MCP HTTP server is reachable (non-systemd fallback). */
+async function isMcpHttpReachable(port) {
+    const url = getMcpBaseUrl(port);
+    try {
+        const response = await fetch(`${url}/health`, {
+            method: 'GET',
+            signal: AbortSignal.timeout(2000),
+        });
+        return response.ok;
+    }
+    catch {
+        return false;
+    }
+}
 export function getMcpRegistryPath() {
     return MCP_PROJECT_DIR;
 }
@@ -24,14 +38,17 @@ export async function isMcpRegistryInstalled() {
         return false;
     }
 }
-export async function isMcpRunning(_port) {
+export async function isMcpRunning(port) {
+    // Try systemd first
     try {
         const { stdout } = await execa('systemctl', ['is-active', MCP_SYSTEMD_UNIT]);
-        return stdout.trim() === 'active';
+        if (stdout.trim() === 'active')
+            return true;
     }
     catch {
-        return false;
+        // systemd not available — fallback to HTTP health check
     }
+    return isMcpHttpReachable(port);
 }
 export async function startMcpRegistry(port) {
     const actualPort = port || getMcpDefaultPort();
@@ -132,7 +149,7 @@ export async function listMcpTools(port) {
         if (!Array.isArray(tools)) {
             return { tools: [], error: 'Unexpected response shape from /health/tools' };
         }
-        return { tools: tools.map((t) => String(t)) };
+        return { tools: tools.map((t) => t.name || String(t)) };
     }
     catch (err) {
         if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {

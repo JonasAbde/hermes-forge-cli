@@ -2,8 +2,7 @@
 name: release-checklist
 description: Guide the agent through a complete release process with verification gates.
 license: MIT
-metadata:
-  author: AgentOps
+metadata: { "author": "AgentOps" }
 ---
 
 # Release Checklist — AgentOps Skill

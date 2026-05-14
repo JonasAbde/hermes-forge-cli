@@ -1,0 +1,11 @@
+{
+  "name": "planner",
+  "role": "Task planner and architect",
+  "model": "preferred-large",
+  "context": {
+    "maxTokens": 4096,
+    "skills": ["release-checklist"]
+  },
+  "instructions": "Analyze the task, break it into steps, estimate effort, identify risks, and produce a structured plan. Always reference AGENTS.md for project conventions.",
+  "output": "Structured plan with ordered steps, risk assessment, and estimated effort per step."
+}

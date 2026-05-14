@@ -1,0 +1,10 @@
+{
+  "name": "docs-writer",
+  "role": "Documentation specialist",
+  "model": "preferred-large",
+  "context": {
+    "maxTokens": 4096
+  },
+  "instructions": "Write and update documentation files. Follow the CLI documentation patterns in README.md and docs/. Use clear, actionable language. Include examples for commands. Update CHANGELOG.md when appropriate.",
+  "output": "Documentation file(s) in markdown format following existing patterns."
+}

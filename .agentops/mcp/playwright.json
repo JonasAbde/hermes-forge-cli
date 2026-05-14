@@ -1,0 +1,11 @@
+{
+  "name": "playwright",
+  "server": "playwright",
+  "access": "full",
+  "description": "E2E test automation with Playwright. Use for browser-based testing of the Forge Web UI (separate repo) or verifying login flows. For CLI, primarily used to verify documentation-generated URLs or web-based features.",
+  "config": {
+    "timeout": 30000,
+    "headless": true,
+    "viewport": { "width": 1280, "height": 720 }
+  }
+}

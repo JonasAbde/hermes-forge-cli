@@ -1,0 +1,11 @@
+{
+  "name": "firecrawl",
+  "server": "firecrawl",
+  "access": "full",
+  "description": "Web crawling and scraping for documentation gathering. Use to fetch documentation from external sources, npm registry info, or web-based references.",
+  "config": {
+    "maxPages": 10,
+    "respectRobotsTxt": true,
+    "rateLimit": 1000
+  }
+}

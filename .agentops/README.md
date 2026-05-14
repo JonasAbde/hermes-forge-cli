@@ -7,13 +7,13 @@ This directory contains the AgentOps foundation for AI-assisted development of t
 ```
 .agentops/
 ├── README.md              # This file — directory overview
-├── skills/                # Agent skills relevant to CLI development
-│   ├── forge-cli-release.md
-│   ├── github-issue-to-pr.md
-│   ├── long-session-protocol.md
-│   ├── release-checklist.md
-│   ├── mcp-security-audit.md
-│   └── api-contract-review.md
+├── skills/                # Agent skills (SKILL.md format, auto-discovered by OpenClaw)
+│   ├── forge-cli-release/SKILL.md
+│   ├── github-issue-to-pr/SKILL.md
+│   ├── long-session-protocol/SKILL.md
+│   ├── release-checklist/SKILL.md
+│   ├── mcp-security-audit/SKILL.md
+│   └── api-contract-review/SKILL.md
 ├── subagents/             # Subagent task configurations
 │   ├── planner.json
 │   ├── code-reviewer.json
@@ -39,12 +39,14 @@ This directory contains the AgentOps foundation for AI-assisted development of t
 
 | Skill | Purpose |
 |-------|---------|
-| `forge-cli-release.md` | Release management for npm package |
-| `github-issue-to-pr.md` | Convert GitHub issues to pull requests |
-| `long-session-protocol.md` | Protocol for extended development sessions |
-| `release-checklist.md` | Release checklist process |
-| `mcp-security-audit.md` | Security audit with MCP tools |
-| `api-contract-review.md` | API contract verification |
+| `forge-cli-release` | Release management for npm package |
+| `github-issue-to-pr` | Convert GitHub issues to pull requests |
+| `long-session-protocol` | Protocol for extended development sessions |
+| `release-checklist` | Release checklist process |
+| `mcp-security-audit` | Security audit with MCP tools |
+| `api-contract-review` | API contract verification |
+
+All skills use the OpenClaw `SKILL.md` format in subdirectories (`skills/<name>/SKILL.md`) and are auto-discovered via `skills.load.extraDirs`.
 
 ## Subagents
 

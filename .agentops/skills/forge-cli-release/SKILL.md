@@ -1,3 +1,11 @@
+---
+name: forge-cli-release
+description: Manage the release lifecycle for the @jonasabde/hermes-forge-cli npm package.
+license: MIT
+metadata:
+  author: AgentOps
+---
+
 # Forge CLI Release — AgentOps Skill
 
 ## Purpose

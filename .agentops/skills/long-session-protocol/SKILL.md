@@ -2,8 +2,7 @@
 name: long-session-protocol
 description: Handle extended, multi-step development sessions that span context windows, file operations, and decision-making.
 license: MIT
-metadata:
-  author: AgentOps
+metadata: { "author": "AgentOps" }
 ---
 
 # Long Session Protocol — AgentOps Skill

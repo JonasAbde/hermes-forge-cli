@@ -2,8 +2,7 @@
 name: api-contract-review
 description: Review API contracts (endpoints, request/response shapes, auth) between the CLI and the Hermes Forge Platform API.
 license: MIT
-metadata:
-  author: AgentOps
+metadata: { "author": "AgentOps" }
 ---
 
 # API Contract Review — AgentOps Skill

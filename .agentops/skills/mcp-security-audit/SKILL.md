@@ -2,8 +2,7 @@
 name: mcp-security-audit
 description: Audit the project for security vulnerabilities using MCP tools and manual checks.
 license: MIT
-metadata:
-  author: AgentOps
+metadata: { "author": "AgentOps" }
 ---
 
 # MCP Security Audit — AgentOps Skill

@@ -1,3 +1,11 @@
+---
+name: github-issue-to-pr
+description: Convert a GitHub issue into a well-structured pull request with commits, branching, and documentation.
+license: MIT
+metadata:
+  author: AgentOps
+---
+
 # GitHub Issue to PR — AgentOps Skill
 
 ## Purpose

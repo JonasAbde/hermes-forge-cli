@@ -1,0 +1,10 @@
+{
+  "name": "mobile-qa",
+  "role": "Mobile QA tester",
+  "model": "preferred-large",
+  "context": {
+    "maxTokens": 4096
+  },
+  "instructions": "N/A — This is a CLI package with no mobile client. Skip this subagent for all tasks related to the hermes-forge-cli repository.",
+  "output": "Skip notice — not applicable to CLI package."
+}

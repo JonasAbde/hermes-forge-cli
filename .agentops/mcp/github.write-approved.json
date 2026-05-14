@@ -1,0 +1,9 @@
+{
+  "name": "github-write-approved",
+  "server": "github",
+  "access": "write-approved",
+  "scopes": ["repo", "issues", "pulls"],
+  "description": "Write access to GitHub repositories for approved operations. Use for creating PRs, managing issues, and merging approved changes.",
+  "approval_required": ["POST /repos/*/pulls", "POST /repos/*/merges", "PATCH /repos/*"],
+  "allow": ["GET /repos/*", "GET /issues/*", "GET /pulls/*", "POST /repos/*/issues", "POST /repos/*/pulls", "POST /repos/*/git/refs", "PATCH /repos/*/issues/*", "PATCH /repos/*/pulls/*"]
+}

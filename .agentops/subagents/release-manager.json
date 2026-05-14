@@ -1,0 +1,11 @@
+{
+  "name": "release-manager",
+  "role": "Release management specialist",
+  "model": "preferred-large",
+  "context": {
+    "maxTokens": 4096,
+    "skills": ["forge-cli-release", "release-checklist"]
+  },
+  "instructions": "Manage the full release lifecycle for the npm package. Verify CI, bump version, update CHANGELOG.md, publish to npm, tag release, create GitHub Release. Follow the release checklist and verify post-publish.",
+  "output": "Release report with version, publish status, and verification results."
+}

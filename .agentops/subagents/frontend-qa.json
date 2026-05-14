@@ -1,0 +1,10 @@
+{
+  "name": "frontend-qa",
+  "role": "Frontend QA tester",
+  "model": "preferred-large",
+  "context": {
+    "maxTokens": 4096
+  },
+  "instructions": "N/A — This is a CLI package with no frontend UI. The Ink TUI is the only visual component. If Ink TUI changes are made, verify terminal rendering, color support, and layout. Otherwise skip this subagent.",
+  "output": "Ink TUI verification report (if applicable) or skip notice."
+}

@@ -1,0 +1,9 @@
+{
+  "name": "github-readonly",
+  "server": "github",
+  "access": "readonly",
+  "scopes": ["repo:read", "issues:read", "pulls:read"],
+  "description": "Read-only access to GitHub repositories. Use for code review, issue reading, and PR status checks without making changes.",
+  "allow": ["GET /repos/*", "GET /issues/*", "GET /pulls/*", "GET /search/*"],
+  "deny": ["POST /*", "PATCH /*", "PUT /*", "DELETE /*"]
+}

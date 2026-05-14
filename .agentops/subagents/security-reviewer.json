@@ -1,0 +1,11 @@
+{
+  "name": "security-reviewer",
+  "role": "Security audit specialist",
+  "model": "preferred-large",
+  "context": {
+    "maxTokens": 4096,
+    "skills": ["mcp-security-audit"]
+  },
+  "instructions": "Audit code for security vulnerabilities: hardcoded secrets, shell injection, path traversal, unsafe eval, config leakage. Cross-reference with GUARDRAILS.md, SECRETS_POLICY.md, and BLAST_RADIUS.md.",
+  "output": "Security audit report with findings, severity, and remediation steps."
+}

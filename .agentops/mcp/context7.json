@@ -1,0 +1,10 @@
+{
+  "name": "context7",
+  "server": "context7",
+  "access": "full",
+  "description": "Context retrieval server for fetching relevant documentation, code snippets, and project information. Use during development to find existing patterns, API docs, and architecture decisions.",
+  "config": {
+    "maxResults": 10,
+    "scopes": ["documentation", "code", "decisions"]
+  }
+}

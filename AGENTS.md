@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # AGENTS.md
 
 ## AI Agent Instructions — Hermes Forge CLI
@@ -90,3 +91,35 @@ See `docs/RELEASE_CHECKLIST.md` for the full process.
 - **Ink/React:** TUI mode depends on Ink v7 + React 19. JSX must be compiled by TypeScript (tsx is valid in `.tsx` files).
 - **Health script:** The production health script at `~/.hermes/scripts/forge-health.sh` is optional — fallback mode works without it.
 - **No server/DB:** This package is CLI-only. It connects to remote Hermes Forge instances via API. No local database, no server processes.
+=======
+# AGENTS.md — Hermes Forge CLI
+
+> AI agent instructions for this repository.
+> AgentOps lives in **hermes-forge-ecosystem** — start there.
+
+## Identity
+
+You are an AI agent working on the **Hermes Forge CLI** — a public developer tool
+for pack management, deployment, and MCP integration.
+
+**Production:** npm package `@jonasabde/hermes-forge-cli`
+
+## Working Principles
+
+1. **Read-only by default.** Don't modify without approval.
+2. **No publish without CI passing.** Hard guardrail.
+3. **No breaking changes without deprecation notice.** CLI is a public tool.
+4. **No secrets in output.** Ever.
+5. **Verify everything.** Run tests before any commit.
+
+## Getting Started
+
+1. Read `hermes-forge-ecosystem/.agentops/README.md` — all skills, subagents, references
+2. Load relevant skill from `.agentops/skills/<name>/SKILL.md`
+3. Delegate to subagent for specialized work
+
+## Related
+
+- `hermes-forge-ecosystem` — https://github.com/JonasAbde/hermes-forge-ecosystem
+- `.agentops/README.md` — pointer to ecosystem
+>>>>>>> 7dc53f2 (chore(agentops): add AgentOps pointer to ecosystem control plane)

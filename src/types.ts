@@ -1,4 +1,9 @@
-// Duplicate of types from web/src/types/forge.ts to avoid project reference issues
+// Forge API types migrated to @jonasabde/forge-api
+// See: https://www.npmjs.com/package/@jonasabde/forge-api
+import type { User, ForgeDeployment } from '@jonasabde/forge-api'
+
+export type { User as ForgeApiUser, ForgeDeployment }
+
 export interface ForgePackSummary {
   pack_id: string;
   slug: string;
@@ -67,29 +72,6 @@ export interface WslInfo {
 }
 
 // ─── Forge API types (for remote forge.tekup.dk) ──────────────────
-
-export interface ForgeApiUser {
-  id: string;
-  email: string;
-  role: string;
-  display_name?: string;
-  preferred_language?: string;
-  tier: string;
-  created_at: number;
-  last_seen_at?: number;
-}
-
-export interface ForgeDeployment {
-  id: string;
-  user_id: string;
-  name: string;
-  pack_ids: string[];
-  status: 'stopped' | 'running' | 'error';
-  config_hash: string;
-  version: number;
-  created_at: string;
-  updated_at: string;
-}
 
 export interface ForgeRemotePack {
   pack_id: string;
@@ -176,4 +158,3 @@ export interface ExtensionEntry {
 }
 
 export type HookName = 'onInit' | 'onBeforeExit' | 'onCommand';
-

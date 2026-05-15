@@ -1,3 +1,5 @@
+import type { User, ForgeDeployment } from '@jonasabde/forge-api';
+export type { User as ForgeApiUser, ForgeDeployment };
 export interface ForgePackSummary {
     pack_id: string;
     slug: string;
@@ -59,27 +61,6 @@ export interface WslInfo {
     isWsl2: boolean;
     hostIp: string | null;
     openCommand: (url: string) => string[];
-}
-export interface ForgeApiUser {
-    id: string;
-    email: string;
-    role: string;
-    display_name?: string;
-    preferred_language?: string;
-    tier: string;
-    created_at: number;
-    last_seen_at?: number;
-}
-export interface ForgeDeployment {
-    id: string;
-    user_id: string;
-    name: string;
-    pack_ids: string[];
-    status: 'stopped' | 'running' | 'error';
-    config_hash: string;
-    version: number;
-    created_at: string;
-    updated_at: string;
 }
 export interface ForgeRemotePack {
     pack_id: string;

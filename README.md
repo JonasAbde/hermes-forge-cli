@@ -20,7 +20,7 @@ npx @jonasabde/hermes-forge-cli forge --help
 
 # Verify
 forge --version
-# → 2.0.0
+# → 2.9.0
 ```
 
 ## Quick Start

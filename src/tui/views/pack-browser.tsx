@@ -48,30 +48,36 @@ async function fetchPacks(): Promise<PackItem[]> {
     const res = await fetch(`${API_BASE}/packs`, { signal: AbortSignal.timeout(5000) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    return (data.packs || data || []).map((p: any) => ({
-      id: p.pack_id || p.id,
-      name: p.name || p.slug || 'unknown',
-      slug: p.slug || '',
-      rarity: p.rarity_tier || p.rarity || 'common',
-      status: p.status || 'unknown',
-      trust_score: p.trust_score ?? 0,
-      install_count: p.install_count ?? 0,
-    }));
+    return (data.packs || data || []).map((p: unknown) => {
+      const x = p as Record<string, unknown>;
+      return {
+        id: x.pack_id || x.id,
+        name: x.name || x.slug || 'unknown',
+        slug: x.slug || '',
+        rarity: x.rarity_tier || x.rarity || 'common',
+        status: x.status || 'unknown',
+        trust_score: x.trust_score ?? 0,
+        install_count: x.install_count ?? 0,
+      };
+    });
   } catch {
     // Fallback to marketplace endpoint
     try {
       const res = await fetch(`${API_BASE}/marketplace/packs`, { signal: AbortSignal.timeout(5000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      return (data.packs || data || []).map((p: any) => ({
-        id: p.pack_id || p.id,
-        name: p.name || p.slug || 'unknown',
-        slug: p.slug || '',
-        rarity: p.rarity_tier || p.rarity || 'common',
-        status: p.status || 'unknown',
-        trust_score: p.trust_score ?? 0,
-        install_count: p.install_count ?? 0,
-      }));
+      return (data.packs || data || []).map((p: unknown) => {
+        const x = p as Record<string, unknown>;
+        return {
+          id: x.pack_id || x.id,
+          name: x.name || x.slug || 'unknown',
+          slug: x.slug || '',
+          rarity: x.rarity_tier || x.rarity || 'common',
+          status: x.status || 'unknown',
+          trust_score: x.trust_score ?? 0,
+          install_count: x.install_count ?? 0,
+        };
+      });
     } catch {
       return [];
     }
@@ -98,9 +104,9 @@ export function PackBrowser({ forceReload }: { forceReload: number }) {
           setPacks(result);
           setLastUpdate(new Date());
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (!cancelled) {
-          setError(e.message || 'Failed to load packs');
+          setError(e instanceof Error ? e.message : 'Failed to load packs');
         }
       } finally {
         if (!cancelled) setLoading(false);

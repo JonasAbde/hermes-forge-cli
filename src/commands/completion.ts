@@ -5,7 +5,6 @@ import { homedir } from 'os';
 import chalk from 'chalk';
 import { printHeader, printSuccess, printInfo, printWarning, printError } from '../lib/output.js';
 
-/* eslint-disable no-useless-escape */
 // Declare shell variables that are provided at runtime
 declare const COMP_WORDS: string[];
 declare const COMP_CWORD: number;

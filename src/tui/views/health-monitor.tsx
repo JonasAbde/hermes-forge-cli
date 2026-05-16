@@ -67,12 +67,12 @@ export function HealthMonitor() {
               ms,
             });
           }
-        } catch (e: any) {
+        } catch (e: unknown) {
           checks.push({
             name: target.name,
             url: target.url,
             status: 'fail',
-            detail: e.message || 'timeout',
+            detail: e instanceof Error ? e.message : 'unknown',
             ms: 0,
           });
         }

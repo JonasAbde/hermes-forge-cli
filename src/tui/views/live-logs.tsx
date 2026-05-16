@@ -103,13 +103,13 @@ export function LiveLogs() {
             return next;
           });
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (cancelled) return;
         pollCount.current++;
         const ts = new Date().toLocaleTimeString();
-        const errorMsg = e.message?.includes('timeout') || e.name === 'TimeoutError'
+        const errorMsg = (e instanceof Error && (e.message?.includes('timeout') || e.name === 'TimeoutError'))
           ? `Health check timed out (5s)`
-          : `Error: ${e.message || 'unknown'}`;
+          : `Error: ${e instanceof Error ? e.message : 'unknown'}`;
 
         setEntries((prev: LogEntry[]) => {
           const entry: LogEntry = {

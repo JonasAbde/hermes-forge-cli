@@ -203,9 +203,8 @@ program
     const userDir = join(getUserExtensionDir(), name);
     const projectDir = join(getProjectExtensionDir(), name);
 
-    let targetDir = '';
+    let targetDir: string;
     if (existsSync(userDir)) {
-      // Check if it's from a known path
       targetDir = userDir;
     } else if (existsSync(projectDir)) {
       targetDir = projectDir;

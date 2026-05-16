@@ -55,7 +55,7 @@ const REPOS: RepoInfo[] = [
     status: 'active',
     visibility: 'public',
     packageName: '@jonasabde/hermes-forge-cli',
-    version: '2.8.0',
+    version: '2.9.0',
     deployTarget: 'npm',
   },
   {

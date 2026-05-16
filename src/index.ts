@@ -68,6 +68,7 @@ if (process.argv.length <= 2 || (process.argv[2] && !process.argv[3] && (process
     program.addCommand(new Command('badge').alias('badges').description('View badges and achievements'));
     program.addCommand(new Command('market').alias('markets').description('Interact with the Forge marketplace'));
     program.addCommand(new Command('watch').description('Subscribe to Forge events and monitor changes'));
+    program.addCommand(new Command('ecosystem').alias('ecosystem-status').description('Show status of all Forge ecosystem repos'));
 
     printHeader('Forge CLI');
     program.outputHelp();
@@ -129,6 +130,7 @@ async function main() {
     import('./commands/market.js'),
     import('./commands/watch.js'),
     import('./commands/xp.js'),
+    import('./commands/ecosystem.js'),
   ]);
 
   commands.forEach(cmd => program.addCommand(cmd.default));
